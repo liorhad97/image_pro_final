@@ -6,6 +6,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
+import hparams as HP
 from detection.models import DetResult
 
 
@@ -16,7 +17,7 @@ from detection.models import DetResult
 def hstack_resize(
     left: np.ndarray,
     right: np.ndarray,
-    max_width: int = 1920,
+    max_width: int = HP.PREVIEW_MAX_WIDTH,
 ) -> np.ndarray:
     """
     Stack two images side-by-side at a common height, then cap the total

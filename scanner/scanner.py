@@ -191,9 +191,18 @@ class Scanner:
                       event_idx += 1
 
                   if confirmed:
-                      return self._build_result(
+                      result = self._build_result(
                           ang, det_left, det_right, dist_result
                       )
+                      if not self._cfg.scan.view:
+                          return result
+
+                      quit_requested = self._follow_target(
+                          initial_angle=float(ang),
+                          target_cls=result.left_class,
+                      )
+                      if quit_requested:
+                          return result
 
         finally:
             self._cleanup()
@@ -221,6 +230,140 @@ class Scanner:
             and det_left.cls != "None" and det_right.cls != "None"
             and det_left.cls == det_right.cls
         )
+
+    def _follow_target(
+        self,
+        initial_angle: float,
+        target_cls: str,
+    ) -> bool:
+        """
+        Track *target_cls* by panning the servo so the object stays near the
+        frame centre.
+
+        Returns ``True`` if the user requested quit, otherwise ``False`` when
+        the target was lost and sweep mode should resume.
+        """
+        frame_mid_x = self._cfg.camera.width / 2.0
+        deadband_px = max(hparams.TRACKER_DEADBAND_MIN_PX, self._cfg.camera.width * hparams.TRACKER_DEADBAND_FRAC)
+        kp_deg = hparams.TRACKER_KP_DEG
+        max_step_deg = hparams.TRACKER_MAX_STEP_DEG
+        lost_limit = hparams.TRACKER_LOST_LIMIT
+
+        ang = float(initial_angle)
+        pan_sign = 1.0
+        lost_count = 0
+        prev_error_px: Optional[float] = None
+        prev_delta_deg = 0.0
+
+        print(
+            f"[Tracker] Following class='{target_cls}' at pan={int(round(ang))}°."
+        )
+
+        while True:
+            frame_left, frame_right = self._cams.capture_bgr()
+            det_left = self._detector.detect(frame_left)
+            det_right = self._detector.detect(frame_right)
+
+            same_class = self._same_valid_class(det_left, det_right)
+            edge_ok_left = bbox_margin_ok(
+                det_left,
+                self._cfg.camera.width,
+                self._cfg.camera.height,
+                self._cfg.scan.edge_margin_px,
+            )
+            edge_ok_right = bbox_margin_ok(
+                det_right,
+                self._cfg.camera.width,
+                self._cfg.camera.height,
+                self._cfg.scan.edge_margin_px,
+            )
+
+            dist_result: StereoDistanceResult = (
+                self._distance_estimator.estimate(det_left, det_right)
+                if same_class
+                else StereoDistanceResult(
+                    distance_m=None, distance_cm=None,
+                    disparity_px=None, dy_px=None,
+                    error="no_same_class",
+                )
+            )
+
+            match_left = det_left.found and det_left.cls == target_cls
+            match_right = det_right.found and det_right.cls == target_cls
+
+            centers_x = []
+            if match_left and det_left.center is not None:
+                centers_x.append(float(det_left.center[0]))
+            if match_right and det_right.center is not None:
+                centers_x.append(float(det_right.center[0]))
+
+            if centers_x:
+                lost_count = 0
+                error_px = (sum(centers_x) / len(centers_x)) - frame_mid_x
+
+                if (
+                    prev_error_px is not None
+                    and abs(prev_delta_deg) > 1e-3
+                    and abs(prev_error_px) > deadband_px
+                    and abs(error_px) > abs(prev_error_px) + (deadband_px * 0.25)
+                ):
+                    pan_sign *= -1.0
+                    prev_delta_deg = 0.0
+                    print(
+                        f"[Tracker] Reversing pan direction guess (sign={pan_sign:+.0f})."
+                    )
+
+                delta_deg = 0.0
+                if abs(error_px) > deadband_px:
+                    norm_error = error_px / frame_mid_x
+                    delta_deg = pan_sign * kp_deg * norm_error
+                    delta_deg = max(-max_step_deg, min(max_step_deg, delta_deg))
+
+                    new_ang = max(0.0, min(180.0, ang + delta_deg))
+                    if abs(new_ang - ang) > 1e-3:
+                        ang = new_ang
+                        self._servo.set_angle(ang)
+                        time.sleep(min(hparams.TRACKER_STEP_SLEEP_S, self._cfg.scan.settle_s))
+
+                prev_error_px = error_px
+                prev_delta_deg = delta_deg
+            else:
+                lost_count += 1
+                if lost_count >= lost_limit:
+                    print("[Tracker] Target lost — resuming sweep mode.")
+                    return False
+
+            self._log_frame(
+                int(round(ang)),
+                det_left,
+                det_right,
+                match_left,
+                match_right,
+                edge_ok_left,
+                edge_ok_right,
+                same_class,
+                dist_result,
+            )
+
+            ann_left = self._detector.draw(frame_left, det_left, "L: ")
+            ann_right = self._detector.draw(frame_right, det_right, "R: ")
+
+            if self._cfg.scan.view:
+                quit_requested = self._show_preview(
+                    ann_left,
+                    ann_right,
+                    int(round(ang)),
+                    same_class,
+                    edge_ok_left,
+                    edge_ok_right,
+                    dist_result,
+                    det_left,
+                )
+                if quit_requested:
+                    print("[Tracker] User pressed 'c' — stopping.")
+                    return True
+
+            time.sleep(hparams.TRACKER_LOOP_SLEEP_S)
 
     def _save_per_camera(
         self,

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from rpi_hardware_pwm import HardwarePWM
 
+import hparams as HP
+
 
 class ServoController:
     """
@@ -23,15 +25,15 @@ class ServoController:
         Pulse width (µs) corresponding to 180°.
     """
 
-    _PWM_FREQUENCY_HZ = 50
-    _PERIOD_US = 20_000  # 1 / 50 Hz = 20 ms = 20 000 µs
+    _PWM_FREQUENCY_HZ = HP.SERVO_PWM_FREQUENCY_HZ
+    _PERIOD_US = HP.SERVO_PERIOD_US
 
     def __init__(
         self,
-        channel: int = 0,
-        chip: int = 0,
-        min_us: int = 1000,
-        max_us: int = 2000,
+        channel: int = HP.SERVO_PWM_CHANNEL,
+        chip: int = HP.SERVO_PWM_CHIP,
+        min_us: int = HP.SERVO_MIN_US,
+        max_us: int = HP.SERVO_MAX_US,
     ) -> None:
         self._min_us = min_us
         self._max_us = max_us

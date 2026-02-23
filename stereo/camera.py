@@ -7,6 +7,8 @@ import cv2
 import numpy as np
 from picamera2 import Picamera2
 
+import hparams as HP
+
 
 class StereoCams:
     """
@@ -33,11 +35,11 @@ class StereoCams:
 
     def __init__(
         self,
-        cam0: int = 0,
-        cam1: int = 1,
-        size: Tuple[int, int] = (2328, 1748),
-        fps: int = 30,
-        warmup_frames: int = 8,
+        cam0: int = HP.CAMERA_CAM0_INDEX,
+        cam1: int = HP.CAMERA_CAM1_INDEX,
+        size: Tuple[int, int] = (HP.CAMERA_WIDTH, HP.CAMERA_HEIGHT),
+        fps: int = HP.CAMERA_FPS,
+        warmup_frames: int = HP.CAMERA_WARMUP_FRAMES,
     ) -> None:
         self._warmup_frames = warmup_frames
 
@@ -56,12 +58,12 @@ class StereoCams:
         """Start both cameras and wait for AE/AWB to settle."""
         self._cam_left.start()
         self._cam_right.start()
-        time.sleep(0.3)
+        time.sleep(HP.CAMERA_STARTUP_SLEEP_S)
 
         for _ in range(self._warmup_frames):
             self._cam_left.capture_array("main")
             self._cam_right.capture_array("main")
-            time.sleep(0.01)
+            time.sleep(HP.CAMERA_WARMUP_SLEEP_S)
 
     def stop(self) -> None:
         """Stop both cameras gracefully."""

@@ -17,11 +17,11 @@ import hparams as HP
 
 @dataclass
 class CameraConfig:
-    width: int = 2328
-    height: int = 1748
-    fps: int = 30
-    cam0_index: int = 0
-    cam1_index: int = 1
+    width: int = HP.CAMERA_WIDTH
+    height: int = HP.CAMERA_HEIGHT
+    fps: int = HP.CAMERA_FPS
+    cam0_index: int = HP.CAMERA_CAM0_INDEX
+    cam1_index: int = HP.CAMERA_CAM1_INDEX
 
 
 # ──────────────────────────────────────────────────────────────
@@ -30,10 +30,10 @@ class CameraConfig:
 
 @dataclass
 class ServoConfig:
-    pwm_channel: int = 0
-    pwm_chip: int = 0
-    min_us: int = 1000
-    max_us: int = 2000
+    pwm_channel: int = HP.SERVO_PWM_CHANNEL
+    pwm_chip: int = HP.SERVO_PWM_CHIP
+    min_us: int = HP.SERVO_MIN_US
+    max_us: int = HP.SERVO_MAX_US
 
 
 # ──────────────────────────────────────────────────────────────
@@ -54,10 +54,10 @@ class DetectionConfig:
 
 @dataclass
 class StereoConfig:
-    baseline_m: float = 0.075    # camera centre-to-centre separation [m]
-    fx_px: float = 1893.0        # horizontal focal length [px] — calibrate this!
-    min_disparity_px: float = 2.0
-    max_vertical_offset_px: float = 60.0
+    baseline_m: float = HP.STEREO_BASELINE_M
+    fx_px: float = HP.STEREO_FX_PX
+    min_disparity_px: float = HP.STEREO_MIN_DISPARITY_PX
+    max_vertical_offset_px: float = HP.STEREO_MAX_VERTICAL_OFFSET_PX
 
 
 # ──────────────────────────────────────────────────────────────
@@ -66,10 +66,10 @@ class StereoConfig:
 
 @dataclass
 class ScanConfig:
-    step_deg: int = 5
-    settle_s: float = 0.05
-    edge_margin_px: int = 10
-    outdir: str = "outputs"
+    step_deg: int = HP.SCAN_STEP_DEG
+    settle_s: float = HP.SCAN_SETTLE_S
+    edge_margin_px: int = HP.SCAN_EDGE_MARGIN_PX
+    outdir: str = HP.SCAN_OUTDIR
     view: bool = False
     target: Optional[str] = None   # "Cube" | "Cylinder" | "Pyramid" | None
 
