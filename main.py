@@ -17,10 +17,12 @@ from config import (
     AppConfig,
     CameraConfig,
     DetectionConfig,
+    MotorConfig,
     ScanConfig,
     ServoConfig,
     StereoConfig,
 )
+from motors import Navigator
 from scanner import Scanner
 from utils import normalize_target_name
 
@@ -101,6 +103,7 @@ def build_config(args: argparse.Namespace) -> AppConfig:
             view=args.view,
             target=target,
         ),
+        motor=MotorConfig(),
     )
 
 
@@ -115,6 +118,15 @@ def main() -> None:
     result = scanner.run()
     if result is not None:
         print("Result:", result)
+        if result.distance_cm is not None:
+            print(f"[Main] Driving to target: {result.distance_cm:.1f} cm")
+            navigator = Navigator(config.motor)
+            try:
+                navigator.start()
+                navigator.drive_straight_mm(result.distance_cm * 10)
+            finally:
+                navigator.cleanup()
+            print("[Main] Drive complete.")
 
 
 if __name__ == "__main__":

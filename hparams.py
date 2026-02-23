@@ -75,6 +75,7 @@ IMU_ACCEL_MS2: float = 9806.6      # 1 g in mm/s²
 IMU_NOISE_THRESHOLD: float = 400.0 # mm/s² below which motion is ignored
 IMU_STILL_COUNT_LIMIT: int = 5     # consecutive still samples before zeroing velocity
 IMU_CALIBRATION_SAMPLES: int = 1000
+MOTOR_DRIVE_SPEED: float = 100.0   # default drive speed 0-100
 
 # ──────────────────────────────────────────────────────────────
 # Servo PWM

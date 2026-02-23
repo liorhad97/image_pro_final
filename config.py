@@ -75,6 +75,29 @@ class ScanConfig:
 
 
 # ──────────────────────────────────────────────────────────────
+# Motor driver + IMU
+# ──────────────────────────────────────────────────────────────
+
+@dataclass
+class MotorConfig:
+    ena: int = HP.MOTOR_ENA
+    in1: int = HP.MOTOR_IN1
+    in2: int = HP.MOTOR_IN2
+    enb: int = HP.MOTOR_ENB
+    in3: int = HP.MOTOR_IN3
+    in4: int = HP.MOTOR_IN4
+    pwm_frequency_hz: int = HP.MOTOR_PWM_FREQUENCY_HZ
+    imu_bus: int = HP.IMU_I2C_BUS
+    imu_addr: int = HP.IMU_I2C_ADDR
+    imu_accel_scale: float = HP.IMU_ACCEL_SCALE
+    imu_accel_ms2: float = HP.IMU_ACCEL_MS2
+    imu_noise_threshold: float = HP.IMU_NOISE_THRESHOLD
+    imu_still_count_limit: int = HP.IMU_STILL_COUNT_LIMIT
+    imu_calibration_samples: int = HP.IMU_CALIBRATION_SAMPLES
+    drive_speed: float = HP.MOTOR_DRIVE_SPEED
+
+
+# ──────────────────────────────────────────────────────────────
 # Convenience: bundle all configs together
 # ──────────────────────────────────────────────────────────────
 
@@ -85,3 +108,4 @@ class AppConfig:
     detection: DetectionConfig = field(default_factory=DetectionConfig)
     stereo: StereoConfig = field(default_factory=StereoConfig)
     scan: ScanConfig = field(default_factory=ScanConfig)
+    motor: MotorConfig = field(default_factory=MotorConfig)
