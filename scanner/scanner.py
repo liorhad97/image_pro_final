@@ -457,6 +457,7 @@ class Scanner:
 
         combo = hstack_resize(ann_left, ann_right, max_width=1920)
         extra = (
+            f"SERVO={ang}°  "
             f"SAME={'Y' if same_class else 'N'}  "
             f"EDGE_L={'OK' if edge_ok_left else 'BAD'}  "
             f"EDGE_R={'OK' if edge_ok_right else 'BAD'}"
@@ -465,7 +466,7 @@ class Scanner:
             combo,
             dist_result,
             title=(
-                f"Target: {self._cfg.scan.target or 'Any'} | pan={ang}°"
+                f"Target: {self._cfg.scan.target or 'Any'} | SERVO={ang}°"
             ),
             extra_status=extra,
         )
@@ -490,7 +491,7 @@ class Scanner:
             else (dist_result.error or "--")
         )
         print(
-            f"pan={ang:3d} | "
+            f"servo={ang:3d}° | "
             f"L={det_left.cls:8s} {'OK' if match_left else '--'} "
             f"{'EDGE_OK' if edge_ok_left else 'EDGE_BAD'} | "
             f"R={det_right.cls:8s} {'OK' if match_right else '--'} "
