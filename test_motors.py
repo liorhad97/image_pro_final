@@ -7,7 +7,7 @@ import math
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-ENA, IN1, IN2 = 12, 17, 27
+ENA, IN1, IN2 = 18, 17, 27
 ENB, IN3, IN4 = 13, 23, 24
 
 pins = [ENA, IN1, IN2, ENB, IN3, IN4]

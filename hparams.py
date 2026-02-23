@@ -55,6 +55,28 @@ CAMERA_STARTUP_SLEEP_S: float = 0.3   # seconds to wait after starting cameras
 CAMERA_WARMUP_SLEEP_S: float = 0.01   # seconds between warmup frame captures
 
 # ──────────────────────────────────────────────────────────────
+# Motor driver (L298N) GPIO pins  [BCM numbering]
+# ──────────────────────────────────────────────────────────────
+MOTOR_ENA: int = 18   # Motor A PWM enable  → Physical Pin 12
+MOTOR_IN1: int = 17   # Motor A direction 1 → Physical Pin 11
+MOTOR_IN2: int = 27   # Motor A direction 2 → Physical Pin 13
+MOTOR_ENB: int = 13   # Motor B PWM enable  → Physical Pin 33
+MOTOR_IN3: int = 23   # Motor B direction 1 → Physical Pin 16
+MOTOR_IN4: int = 24   # Motor B direction 2 → Physical Pin 18
+MOTOR_PWM_FREQUENCY_HZ: int = 1000  # PWM frequency for motor speed control
+
+# ──────────────────────────────────────────────────────────────
+# IMU — MPU-6050  (I2C bus 1, SDA=GPIO2/Pin3, SCL=GPIO3/Pin5)
+# ──────────────────────────────────────────────────────────────
+IMU_I2C_BUS: int = 1       # /dev/i2c-1
+IMU_I2C_ADDR: int = 0x68   # AD0 pulled LOW; use 0x69 if AD0 is HIGH
+IMU_ACCEL_SCALE: float = 16384.0   # LSB/g at ±2 g full-scale range
+IMU_ACCEL_MS2: float = 9806.6      # 1 g in mm/s²
+IMU_NOISE_THRESHOLD: float = 400.0 # mm/s² below which motion is ignored
+IMU_STILL_COUNT_LIMIT: int = 5     # consecutive still samples before zeroing velocity
+IMU_CALIBRATION_SAMPLES: int = 1000
+
+# ──────────────────────────────────────────────────────────────
 # Servo PWM
 # ──────────────────────────────────────────────────────────────
 SERVO_PWM_CHANNEL: int = 0
