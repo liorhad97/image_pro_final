@@ -80,6 +80,23 @@ Commands at the prompt:
 | `c` | Calibration sweep: 0 → 90 → 180 → 90 → 0 |
 | `q` | Quit |
 
+## Motor distance test (`test_motors.py`)
+
+Interactive script to test motors by driving a specified distance using IMU feedback.
+
+```bash
+python3 test_motors.py
+```
+
+You will be prompted to enter a target distance in millimeters:
+
+```
+Enter target distance in millimeters (e.g. 400): 400
+```
+
+The car will calibrate the IMU, drive to the target distance, then stop automatically.
+Press `Ctrl+C` at any time for an emergency stop.
+
 ## Distance tool (`measure_distance.py`)
 
 Show options:
