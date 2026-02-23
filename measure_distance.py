@@ -31,17 +31,17 @@ def parse_args() -> argparse.Namespace:
         description="Live stereo distance measurement for a blue object.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    ap.add_argument("--baseline-m", type=float, default=0.075,
+    ap.add_argument("--baseline-m", type=float, default=HP.STEREO_BASELINE_M,
                     help="Camera baseline — centre-to-centre separation (m)")
-    ap.add_argument("--fx-px",      type=float, default=1893.0,
+    ap.add_argument("--fx-px",      type=float, default=HP.STEREO_FX_PX,
                     help="Horizontal focal length from calibration (px)")
-    ap.add_argument("--min-disp",   type=float, default=2.0,
+    ap.add_argument("--min-disp",   type=float, default=HP.STEREO_MIN_DISPARITY_PX,
                     help="Min |disparity| to trust a distance reading (px)")
-    ap.add_argument("--max-dy",     type=float, default=60.0,
+    ap.add_argument("--max-dy",     type=float, default=HP.STEREO_MAX_VERTICAL_OFFSET_PX,
                     help="Max vertical offset |yL-yR| before rejecting (px)")
-    ap.add_argument("--width",  type=int, default=2328)
-    ap.add_argument("--height", type=int, default=1748)
-    ap.add_argument("--fps",    type=int, default=30)
+    ap.add_argument("--width",  type=int, default=HP.CAMERA_WIDTH)
+    ap.add_argument("--height", type=int, default=HP.CAMERA_HEIGHT)
+    ap.add_argument("--fps",    type=int, default=HP.CAMERA_FPS)
     ap.add_argument("--downscale", type=int, default=HP.DOWNSCALE_WIDTH,
                     help="Resize frames to this width for display (px)")
     return ap.parse_args()

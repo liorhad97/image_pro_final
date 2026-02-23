@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+import hparams as HP
 from config import (
     AppConfig,
     CameraConfig,
@@ -41,29 +42,29 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
     # Scan behaviour
     g_scan = ap.add_argument_group("Scan behaviour")
-    g_scan.add_argument("--step",   type=int,   default=5,       help="Servo step size (degrees)")
-    g_scan.add_argument("--settle", type=float, default=0.05,    help="Settle time after each servo move (s)")
-    g_scan.add_argument("--view",   action="store_true",          help="Show live OpenCV preview window")
-    g_scan.add_argument("--outdir", type=str,   default="outputs", help="Directory for saved detections")
-    g_scan.add_argument("--edge-margin", type=int, default=10,   help="Min pixels from edge for valid bbox")
+    g_scan.add_argument("--step",   type=int,   default=HP.SCAN_STEP_DEG,    help="Servo step size (degrees)")
+    g_scan.add_argument("--settle", type=float, default=HP.SCAN_SETTLE_S,   help="Settle time after each servo move (s)")
+    g_scan.add_argument("--view",   action="store_true",                     help="Show live OpenCV preview window")
+    g_scan.add_argument("--outdir", type=str,   default=HP.SCAN_OUTDIR,     help="Directory for saved detections")
+    g_scan.add_argument("--edge-margin", type=int, default=HP.SCAN_EDGE_MARGIN_PX, help="Min pixels from edge for valid bbox")
 
     # Camera
     g_cam = ap.add_argument_group("Camera")
-    g_cam.add_argument("--width",  type=int, default=2328, help="Capture width (px)")
-    g_cam.add_argument("--height", type=int, default=1748, help="Capture height (px)")
-    g_cam.add_argument("--fps",    type=int, default=30,   help="Target frame rate")
+    g_cam.add_argument("--width",  type=int, default=HP.CAMERA_WIDTH,  help="Capture width (px)")
+    g_cam.add_argument("--height", type=int, default=HP.CAMERA_HEIGHT, help="Capture height (px)")
+    g_cam.add_argument("--fps",    type=int, default=HP.CAMERA_FPS,    help="Target frame rate")
 
     # Servo
     g_servo = ap.add_argument_group("Servo")
-    g_servo.add_argument("--min-us", type=int, default=1000, help="Servo min pulse (µs) = 0°")
-    g_servo.add_argument("--max-us", type=int, default=2000, help="Servo max pulse (µs) = 180°")
+    g_servo.add_argument("--min-us", type=int, default=HP.SERVO_MIN_US, help="Servo min pulse (µs) = 0°")
+    g_servo.add_argument("--max-us", type=int, default=HP.SERVO_MAX_US, help="Servo max pulse (µs) = 180°")
 
     # Stereo distance
     g_stereo = ap.add_argument_group("Stereo distance")
-    g_stereo.add_argument("--baseline-m", type=float, default=0.075,  help="Camera baseline (m)")
-    g_stereo.add_argument("--fx-px",      type=float, default=1893.0, help="Focal length (px)")
-    g_stereo.add_argument("--min-disp",   type=float, default=2.0,    help="Min |disparity| to compute Z (px)")
-    g_stereo.add_argument("--max-dy",     type=float, default=60.0,   help="Max |yL-yR| for stereo validity (px)")
+    g_stereo.add_argument("--baseline-m", type=float, default=HP.STEREO_BASELINE_M,           help="Camera baseline (m)")
+    g_stereo.add_argument("--fx-px",      type=float, default=HP.STEREO_FX_PX,               help="Focal length (px)")
+    g_stereo.add_argument("--min-disp",   type=float, default=HP.STEREO_MIN_DISPARITY_PX,    help="Min |disparity| to compute Z (px)")
+    g_stereo.add_argument("--max-dy",     type=float, default=HP.STEREO_MAX_VERTICAL_OFFSET_PX, help="Max |yL-yR| for stereo validity (px)")
 
     return ap
 

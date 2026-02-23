@@ -6,6 +6,7 @@ from typing import Dict, Optional
 import cv2
 import numpy as np
 
+import hparams as HP
 from detection.models import DetResult
 
 
@@ -51,10 +52,10 @@ class StereoDistanceEstimator:
 
     def __init__(
         self,
-        fx_px: float = 1893.0,
-        baseline_m: float = 0.075,
-        min_disparity_px: float = 2.0,
-        max_vertical_offset_px: float = 60.0,
+        fx_px: float = HP.STEREO_FX_PX,
+        baseline_m: float = HP.STEREO_BASELINE_M,
+        min_disparity_px: float = HP.STEREO_MIN_DISPARITY_PX,
+        max_vertical_offset_px: float = HP.STEREO_MAX_VERTICAL_OFFSET_PX,
     ) -> None:
         if fx_px <= 0:
             raise ValueError(f"fx_px must be positive, got {fx_px}")

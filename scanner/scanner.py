@@ -408,7 +408,7 @@ class Scanner:
         det_left: DetResult,
         dist_result: StereoDistanceResult,
     ) -> None:
-        combo = hstack_resize(ann_left, ann_right, max_width=1920)
+        combo = hstack_resize(ann_left, ann_right, max_width=hparams.PREVIEW_MAX_WIDTH)
         status = (
             f"SAME class={det_left.cls} | "
             f"edge_margin={self._cfg.scan.edge_margin_px}px | "
@@ -455,7 +455,7 @@ class Scanner:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2,
             )
 
-        combo = hstack_resize(ann_left, ann_right, max_width=1920)
+        combo = hstack_resize(ann_left, ann_right, max_width=hparams.PREVIEW_MAX_WIDTH)
         extra = (
             f"SERVO={ang}°  "
             f"SAME={'Y' if same_class else 'N'}  "
