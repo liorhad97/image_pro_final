@@ -65,10 +65,7 @@ class BlueObjectDetector:
 
         perimeter = cv2.arcLength(cnt, True)
         if perimeter < 1e-6:
-            return DetResult(
-                found=True, cls="None", bbox=None, center=None,
-                mask_raw=raw_full, mask_clean=clean_full,
-            )
+            return DetResult.empty(raw_full, clean_full)
 
         x, y, w, h = cv2.boundingRect(cnt)
         cx, cy = x + w // 2, y + h // 2

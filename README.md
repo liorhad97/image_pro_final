@@ -37,7 +37,7 @@ python main.py --target cube --outdir outputs_cube
 python main.py --width 2328 --height 1748 --fps 30
 
 # Servo settings
-python main.py --min-us 1000 --max-us 2000
+python main.py --min-us 500 --max-us 2500
 
 # Stereo distance settings
 python main.py --baseline-m 0.075 --fx-px 1893 --min-disp 2.0 --max-dy 60.0
@@ -56,8 +56,8 @@ python main.py \
   --width 2328 \
   --height 1748 \
   --fps 30 \
-  --min-us 1000 \
-  --max-us 2000 \
+  --min-us 500 \
+  --max-us 2500 \
   --baseline-m 0.075 \
   --fx-px 1893 \
   --min-disp 2.0 \

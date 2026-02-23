@@ -1,0 +1,8 @@
+{
+  "name": "image-pro",
+  "scripts": {
+    "branch:next": "bash -c 'name=\"$1\"; current=$(git rev-parse --abbrev-ref HEAD); if [[ -n \"$name\" ]]; then new=\"$name\"; elif [[ $current =~ (.+_)([0-9]+)$ ]]; then new=\"${BASH_REMATCH[1]}$((${BASH_REMATCH[2]} + 1))\"; elif [[ $current =~ (.+_)([0-9]+)\\.([0-9]+)(_.+)$ ]]; then new=\"${BASH_REMATCH[1]}$((${BASH_REMATCH[2]} + 1)).${BASH_REMATCH[3]}${BASH_REMATCH[4]}\"; else new=\"${current}_1\"; fi; echo \"Creating branch: $new from $current\"; git checkout -b \"$new\"' --",
+    "branch:current": "git rev-parse --abbrev-ref HEAD",
+    "branch:list": "git branch --list"
+  }
+}

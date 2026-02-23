@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import time
 from typing import Tuple
 
@@ -13,11 +14,10 @@ import hparams as HP
 class StereoCams:
     """
     Manages two Picamera2 instances (left + right) and provides
-    synchronised BGR frame capture.
+    near-synchronised BGR frame capture.
 
-    Per Picamera2 docs, ``format="RGB888"`` returns a uint8 3-channel array
-    that is already in BGR order suitable for OpenCV — no extra conversion
-    needed.
+    Frames are requested as ``RGB888`` from Picamera2 and converted to
+    OpenCV BGR before returning.
 
     Parameters
     ----------
@@ -42,6 +42,7 @@ class StereoCams:
         warmup_frames: int = HP.CAMERA_WARMUP_FRAMES,
     ) -> None:
         self._warmup_frames = warmup_frames
+        self._capture_pool = ThreadPoolExecutor(max_workers=2)
 
         frame_us = int(round(1_000_000 / fps))
         controls = {
@@ -50,8 +51,18 @@ class StereoCams:
             "AwbEnable": True,
         }
 
-        self._cam_left = self._init_camera(cam0, size, controls)
-        self._cam_right = self._init_camera(cam1, size, controls)
+        cam_left = None
+        try:
+            cam_left = self._init_camera(cam0, size, controls)
+            cam_right = self._init_camera(cam1, size, controls)
+        except Exception:
+            if cam_left is not None:
+                self._safe_close(cam_left)
+            self._capture_pool.shutdown(wait=False, cancel_futures=True)
+            raise
+
+        self._cam_left = cam_left
+        self._cam_right = cam_right
 
     # ------------------------------------------------------------------ public
     def start(self) -> None:
@@ -61,14 +72,22 @@ class StereoCams:
         time.sleep(HP.CAMERA_STARTUP_SLEEP_S)
 
         for _ in range(self._warmup_frames):
-            self._cam_left.capture_array("main")
-            self._cam_right.capture_array("main")
+            self._capture_pair_raw()
             time.sleep(HP.CAMERA_WARMUP_SLEEP_S)
 
     def stop(self) -> None:
-        """Stop both cameras gracefully."""
-        self._cam_left.stop()
-        self._cam_right.stop()
+        """Stop and close both cameras gracefully."""
+        try:
+            self._cam_left.stop()
+        except Exception:
+            pass
+        try:
+            self._cam_right.stop()
+        except Exception:
+            pass
+        self._safe_close(self._cam_left)
+        self._safe_close(self._cam_right)
+        self._capture_pool.shutdown(wait=True, cancel_futures=True)
 
     def capture_bgr(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -79,8 +98,7 @@ class StereoCams:
         left_bgr, right_bgr : np.ndarray
             3-channel uint8 BGR arrays at the configured resolution.
         """
-        left = self._cam_left.capture_array("main")
-        right = self._cam_right.capture_array("main")
+        left, right = self._capture_pair_raw()
         return self._to_bgr(left), self._to_bgr(right)
 
     # ----------------------------------------------------------------- private
@@ -100,7 +118,23 @@ class StereoCams:
 
     @staticmethod
     def _to_bgr(frame: np.ndarray) -> np.ndarray:
-        """Drop alpha channel if present (safety guard for unexpected formats)."""
+        """Convert camera output to BGR for OpenCV processing."""
+        if frame.ndim == 3 and frame.shape[2] == 3:
+            return cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         if frame.ndim == 3 and frame.shape[2] == 4:
-            return frame[:, :, :3]
+            return cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
         return frame
+
+    def _capture_pair_raw(self) -> Tuple[np.ndarray, np.ndarray]:
+        left_future = self._capture_pool.submit(self._cam_left.capture_array, "main")
+        right_future = self._capture_pool.submit(self._cam_right.capture_array, "main")
+        left = left_future.result()
+        right = right_future.result()
+        return left, right
+
+    @staticmethod
+    def _safe_close(cam: Picamera2) -> None:
+        try:
+            cam.close()
+        except Exception:
+            pass

@@ -15,15 +15,33 @@ Press 'q' or Esc to quit.
 from __future__ import annotations
 
 import argparse
-import time
+import sys
 
 import cv2
 
 import hparams as HP
-from detection.detector import BlueObjectDetector
-from stereo.camera import StereoCams
-from stereo.distance import StereoDistanceEstimator
 from utils.image_utils import hstack_resize
+
+
+def _positive_int(value: str) -> int:
+    n = int(value)
+    if n <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    return n
+
+
+def _non_negative_float(value: str) -> float:
+    x = float(value)
+    if x < 0:
+        raise argparse.ArgumentTypeError("must be >= 0")
+    return x
+
+
+def _positive_float(value: str) -> float:
+    x = float(value)
+    if x <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    return x
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,26 +49,36 @@ def parse_args() -> argparse.Namespace:
         description="Live stereo distance measurement for a blue object.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    ap.add_argument("--baseline-m", type=float, default=0.075,
+    ap.add_argument("--baseline-m", type=_positive_float, default=0.075,
                     help="Camera baseline — centre-to-centre separation (m)")
-    ap.add_argument("--fx-px",      type=float, default=1893.0,
+    ap.add_argument("--fx-px",      type=_positive_float, default=1893.0,
                     help="Horizontal focal length from calibration (px)")
-    ap.add_argument("--min-disp",   type=float, default=2.0,
+    ap.add_argument("--min-disp",   type=_positive_float, default=2.0,
                     help="Min |disparity| to trust a distance reading (px)")
-    ap.add_argument("--max-dy",     type=float, default=60.0,
+    ap.add_argument("--max-dy",     type=_non_negative_float, default=60.0,
                     help="Max vertical offset |yL-yR| before rejecting (px)")
-    ap.add_argument("--width",  type=int, default=2328)
-    ap.add_argument("--height", type=int, default=1748)
-    ap.add_argument("--fps",    type=int, default=30)
-    ap.add_argument("--downscale", type=int, default=HP.DOWNSCALE_WIDTH,
+    ap.add_argument("--width",  type=_positive_int, default=2328)
+    ap.add_argument("--height", type=_positive_int, default=1748)
+    ap.add_argument("--fps",    type=_positive_int, default=30)
+    ap.add_argument("--downscale", type=_positive_int, default=HP.DOWNSCALE_WIDTH,
                     help="Resize frames to this width for display (px)")
     return ap.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    try:
+        from detection.detector import BlueObjectDetector
+        from stereo.camera import StereoCams
+        from stereo.distance import StereoDistanceEstimator
+    except ModuleNotFoundError as exc:
+        print(
+            f"[ERROR] Missing dependency: {exc.name}. Install camera dependencies and retry.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
-    detector = BlueObjectDetector()
+    detector = BlueObjectDetector(downscale_width=args.downscale)
     estimator = StereoDistanceEstimator(
         fx_px=args.fx_px,
         baseline_m=args.baseline_m,
@@ -62,6 +90,11 @@ def main() -> None:
         size=(args.width, args.height),
         fps=args.fps,
     )
+
+    if args.fx_px == HP.STEREO_FX_PX:
+        print(
+            "[WARN] Using default --fx-px value. Stereo distance needs per-camera calibration for accuracy."
+        )
 
     print("[INFO] Starting cameras…")
     cams.start()

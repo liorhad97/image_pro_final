@@ -20,8 +20,35 @@ from config import (
     ServoConfig,
     StereoConfig,
 )
-from scanner import Scanner
 from utils import normalize_target_name
+
+
+def _positive_int(value: str) -> int:
+    n = int(value)
+    if n <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    return n
+
+
+def _non_negative_int(value: str) -> int:
+    n = int(value)
+    if n < 0:
+        raise argparse.ArgumentTypeError("must be >= 0")
+    return n
+
+
+def _positive_float(value: str) -> float:
+    x = float(value)
+    if x <= 0:
+        raise argparse.ArgumentTypeError("must be > 0")
+    return x
+
+
+def _non_negative_float(value: str) -> float:
+    x = float(value)
+    if x < 0:
+        raise argparse.ArgumentTypeError("must be >= 0")
+    return x
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -41,29 +68,29 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
     # Scan behaviour
     g_scan = ap.add_argument_group("Scan behaviour")
-    g_scan.add_argument("--step",   type=int,   default=5,       help="Servo step size (degrees)")
-    g_scan.add_argument("--settle", type=float, default=0.05,    help="Settle time after each servo move (s)")
+    g_scan.add_argument("--step",   type=_positive_int, default=5,       help="Servo step size (degrees)")
+    g_scan.add_argument("--settle", type=_non_negative_float, default=0.05,    help="Settle time after each servo move (s)")
     g_scan.add_argument("--view",   action="store_true",          help="Show live OpenCV preview window")
     g_scan.add_argument("--outdir", type=str,   default="outputs", help="Directory for saved detections")
-    g_scan.add_argument("--edge-margin", type=int, default=10,   help="Min pixels from edge for valid bbox")
+    g_scan.add_argument("--edge-margin", type=_non_negative_int, default=10,   help="Min pixels from edge for valid bbox")
 
     # Camera
     g_cam = ap.add_argument_group("Camera")
-    g_cam.add_argument("--width",  type=int, default=2328, help="Capture width (px)")
-    g_cam.add_argument("--height", type=int, default=1748, help="Capture height (px)")
-    g_cam.add_argument("--fps",    type=int, default=30,   help="Target frame rate")
+    g_cam.add_argument("--width",  type=_positive_int, default=2328, help="Capture width (px)")
+    g_cam.add_argument("--height", type=_positive_int, default=1748, help="Capture height (px)")
+    g_cam.add_argument("--fps",    type=_positive_int, default=30,   help="Target frame rate")
 
     # Servo
     g_servo = ap.add_argument_group("Servo")
-    g_servo.add_argument("--min-us", type=int, default=1000, help="Servo min pulse (µs) = 0°")
-    g_servo.add_argument("--max-us", type=int, default=2000, help="Servo max pulse (µs) = 180°")
+    g_servo.add_argument("--min-us", type=_positive_int, default=500, help="Servo min pulse (µs) = 0°")
+    g_servo.add_argument("--max-us", type=_positive_int, default=2500, help="Servo max pulse (µs) = 180°")
 
     # Stereo distance
     g_stereo = ap.add_argument_group("Stereo distance")
-    g_stereo.add_argument("--baseline-m", type=float, default=0.075,  help="Camera baseline (m)")
-    g_stereo.add_argument("--fx-px",      type=float, default=1893.0, help="Focal length (px)")
-    g_stereo.add_argument("--min-disp",   type=float, default=2.0,    help="Min |disparity| to compute Z (px)")
-    g_stereo.add_argument("--max-dy",     type=float, default=60.0,   help="Max |yL-yR| for stereo validity (px)")
+    g_stereo.add_argument("--baseline-m", type=_positive_float, default=0.075,  help="Camera baseline (m)")
+    g_stereo.add_argument("--fx-px",      type=_positive_float, default=1893.0, help="Focal length (px)")
+    g_stereo.add_argument("--min-disp",   type=_positive_float, default=2.0,    help="Min |disparity| to compute Z (px)")
+    g_stereo.add_argument("--max-dy",     type=_non_negative_float, default=60.0,   help="Max |yL-yR| for stereo validity (px)")
 
     return ap
 
@@ -73,6 +100,13 @@ def build_config(args: argparse.Namespace) -> AppConfig:
         target = normalize_target_name(args.target)
     except ValueError as exc:
         print(f"[ERROR] {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.max_us <= args.min_us:
+        print(
+            "[ERROR] --max-us must be greater than --min-us",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     return AppConfig(
@@ -108,8 +142,22 @@ def main() -> None:
     args = parser.parse_args()
     config = build_config(args)
 
+    if config.stereo.fx_px == StereoConfig().fx_px:
+        print(
+            "[WARN] Using default --fx-px value. Stereo distance needs per-camera calibration for accuracy."
+        )
+
     if config.scan.view:
-        print("[INFO] Press 'c' in the preview window to stop.")
+        print("[INFO] Press 'c' or 'q' in the preview window to stop.")
+    try:
+        from scanner import Scanner
+    except ModuleNotFoundError as exc:
+        print(
+            f"[ERROR] Missing dependency: {exc.name}. Install hardware dependencies and retry.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     scanner = Scanner(config)
     result = scanner.run()
     if result is not None:
