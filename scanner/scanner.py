@@ -175,22 +175,25 @@ class Scanner:
                               det_left, dist_result,
                           )
 
-                  quit_requested = self._show_preview(
+                  if self._cfg.scan.view:
+                      quit_requested = self._show_preview(
                           ann_left, ann_right,
                           ang, same_class,
                           edge_ok_left, edge_ok_right,
                           dist_result,
                           det_left,
                       )
-                  if quit_requested:
-                      print("[Scanner] User pressed 'c' — stopping.")
-                      return None
+                      if quit_requested:
+                          print("[Scanner] User pressed 'c' — stopping.")
+                          return None
 
                   if match_left or match_right:
                       event_idx += 1
 
                   if confirmed:
-                      self._build_result(ang, det_left, det_right, dist_result)
+                      return self._build_result(
+                          ang, det_left, det_right, dist_result
+                      )
 
         finally:
             self._cleanup()

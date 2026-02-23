@@ -108,7 +108,8 @@ def main() -> None:
     args = parser.parse_args()
     config = build_config(args)
 
-    print("[INFO] Press 'c' in the preview window to stop.")
+    if config.scan.view:
+        print("[INFO] Press 'c' in the preview window to stop.")
     scanner = Scanner(config)
     result = scanner.run()
     if result is not None:
