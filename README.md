@@ -19,7 +19,7 @@ python main.py
 Run your example (target cube + live preview):
 
 ```bash
-python main.py --target cube --view
+python main.py --target cube --view  ######this works fine 
 ```
 
 Other common runs:
