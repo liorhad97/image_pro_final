@@ -130,4 +130,5 @@ if __name__ == "__main__":
         stop_motors()
         pwm_a.stop()
         pwm_b.stop()
+        del pwm_a, pwm_b
         GPIO.cleanup()
