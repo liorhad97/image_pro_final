@@ -40,8 +40,8 @@ class ServoConfig:
 
 @dataclass
 class DetectionConfig:
-    hsv_lo: Tuple[int, int, int] = (105, 120, 100)
-    hsv_hi: Tuple[int, int, int] = (123, 255, 128)
+    hsv_lo: Tuple[int, int, int] = (105, 120, 50)
+    hsv_hi: Tuple[int, int, int] = (123, 255, 255)
     min_area: int = 50
     downscale_width: int = 640
 

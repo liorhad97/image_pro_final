@@ -22,8 +22,8 @@ class BlueObjectDetector:
     """
 
     # Default HSV range tuned for a matte-blue object under indoor lighting.
-    DEFAULT_HSV_LO: Tuple[int, int, int] = (105, 120, 100)
-    DEFAULT_HSV_HI: Tuple[int, int, int] = (123, 255, 128)
+    DEFAULT_HSV_LO: Tuple[int, int, int] = (105, 120, 50)
+    DEFAULT_HSV_HI: Tuple[int, int, int] = (123, 255, 255)
 
     def __init__(
         self,
