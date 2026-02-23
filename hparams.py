@@ -59,8 +59,8 @@ CAMERA_WARMUP_SLEEP_S: float = 0.01   # seconds between warmup frame captures
 # ──────────────────────────────────────────────────────────────
 SERVO_PWM_CHANNEL: int = 0
 SERVO_PWM_CHIP: int = 0
-SERVO_MIN_US: int = 1000      # pulse width [µs] at 0°
-SERVO_MAX_US: int = 2000      # pulse width [µs] at 180°
+SERVO_MIN_US: int = 500       # pulse width [µs] at 0°
+SERVO_MAX_US: int = 2500      # pulse width [µs] at 180°
 SERVO_PWM_FREQUENCY_HZ: int = 50        # standard RC servo frequency
 SERVO_PERIOD_US: int = 20_000           # 1 / 50 Hz = 20 ms = 20 000 µs
 
