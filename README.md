@@ -64,6 +64,22 @@ python main.py \
   --max-dy 60.0
 ```
 
+## Servo manual control (`servo/manual_control.py`)
+
+Interactive script to move the servo by typing angles. Useful for calibration.
+
+```bash
+python servo/manual_control.py
+```
+
+Commands at the prompt:
+
+| Input | Action |
+|-------|--------|
+| `0`–`180` | Move servo to that angle |
+| `c` | Calibration sweep: 0 → 90 → 180 → 90 → 0 |
+| `q` | Quit |
+
 ## Distance tool (`measure_distance.py`)
 
 Show options:
