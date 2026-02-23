@@ -5,6 +5,7 @@ from typing import Tuple
 import cv2
 import numpy as np
 
+import hparams as HP
 from .models import DetResult
 
 
@@ -21,16 +22,12 @@ class BlueObjectDetector:
     annotated = detector.draw(bgr_frame, result)
     """
 
-    # Default HSV range tuned for a matte-blue object under indoor lighting.
-    DEFAULT_HSV_LO: Tuple[int, int, int] = (105, 120, 50)
-    DEFAULT_HSV_HI: Tuple[int, int, int] = (123, 255, 255)
-
     def __init__(
         self,
-        hsv_lo: Tuple[int, int, int] = DEFAULT_HSV_LO,
-        hsv_hi: Tuple[int, int, int] = DEFAULT_HSV_HI,
-        min_area: int = 50,
-        downscale_width: int = 640,
+        hsv_lo: Tuple[int, int, int] = HP.HSV_LO,
+        hsv_hi: Tuple[int, int, int] = HP.HSV_HI,
+        min_area: int = HP.MIN_AREA,
+        downscale_width: int = HP.DOWNSCALE_WIDTH,
     ) -> None:
         self._hsv_lo = np.array(hsv_lo, dtype=np.uint8)
         self._hsv_hi = np.array(hsv_hi, dtype=np.uint8)
@@ -38,7 +35,7 @@ class BlueObjectDetector:
         self._downscale_width = downscale_width
 
         # Morphological structuring element (shared across calls)
-        self._kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        self._kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, HP.MORPH_KERNEL_SIZE)
 
     # ------------------------------------------------------------------ public
     def detect(self, bgr: np.ndarray) -> DetResult:
@@ -143,8 +140,8 @@ class BlueObjectDetector:
         return cv2.inRange(hsv, self._hsv_lo, self._hsv_hi)
 
     def _apply_morphology(self, mask: np.ndarray) -> np.ndarray:
-        closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, self._kernel, iterations=2)
-        opened = cv2.morphologyEx(closed, cv2.MORPH_OPEN, self._kernel, iterations=1)
+        closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, self._kernel, iterations=HP.MORPH_CLOSE_ITER)
+        opened = cv2.morphologyEx(closed, cv2.MORPH_OPEN, self._kernel, iterations=HP.MORPH_OPEN_ITER)
         return opened
 
     @staticmethod
@@ -180,12 +177,12 @@ class BlueObjectDetector:
         """
         extent = area / float(w * h + 1e-9)
         circularity = 4.0 * np.pi * area / (perimeter * perimeter + 1e-12)
-        approx = cv2.approxPolyDP(cnt, 0.02 * perimeter, True)
+        approx = cv2.approxPolyDP(cnt, HP.CLASSIFY_DP_EPSILON * perimeter, True)
         n = len(approx)
 
-        if extent < 0.58 and n <= 6:
+        if extent < HP.CLASSIFY_PYRAMID_MAX_EXTENT and n <= HP.CLASSIFY_PYRAMID_MAX_VERTICES:
             return "Pyramid"
-        if circularity > 0.78 or n >= 8:
+        if circularity > HP.CLASSIFY_CYLINDER_MIN_CIRCULARITY or n >= HP.CLASSIFY_CYLINDER_MIN_VERTICES:
             return "Cylinder"
         return "Cube"
 

@@ -8,6 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, Tuple
 
+import hparams as HP
+
 
 # ──────────────────────────────────────────────────────────────
 # Camera
@@ -40,10 +42,10 @@ class ServoConfig:
 
 @dataclass
 class DetectionConfig:
-    hsv_lo: Tuple[int, int, int] = (105, 120, 50)
-    hsv_hi: Tuple[int, int, int] = (123, 255, 255)
-    min_area: int = 50
-    downscale_width: int = 640
+    hsv_lo: Tuple[int, int, int] = HP.HSV_LO
+    hsv_hi: Tuple[int, int, int] = HP.HSV_HI
+    min_area: int = HP.MIN_AREA
+    downscale_width: int = HP.DOWNSCALE_WIDTH
 
 
 # ──────────────────────────────────────────────────────────────

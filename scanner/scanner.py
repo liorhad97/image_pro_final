@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 
 import cv2
 
+import hparams
 from config import AppConfig
 from detection.detector import BlueObjectDetector
 from detection.models import DetResult
@@ -107,87 +108,89 @@ class Scanner:
 
         event_idx = 0
         try:
-            for ang in self._sweep_angles():
-                self._servo.set_angle(ang)
-                time.sleep(self._cfg.scan.settle_s)
+            while True:
+              for ang in self._sweep_angles():
+                  self._servo.set_angle(ang)
+                  time.sleep(self._cfg.scan.settle_s)
 
-                frame_left, frame_right = self._cams.capture_bgr()
-                det_left = self._detector.detect(frame_left)
-                det_right = self._detector.detect(frame_right)
+                  frame_left, frame_right = self._cams.capture_bgr()
+                  det_left = self._detector.detect(frame_left)
+                  det_right = self._detector.detect(frame_right)
 
-                match_left = self._matches_target(det_left)
-                match_right = self._matches_target(det_right)
-                same_class = self._same_valid_class(det_left, det_right)
-                edge_ok_left = bbox_margin_ok(
-                    det_left,
-                    self._cfg.camera.width,
-                    self._cfg.camera.height,
-                    self._cfg.scan.edge_margin_px,
-                )
-                edge_ok_right = bbox_margin_ok(
-                    det_right,
-                    self._cfg.camera.width,
-                    self._cfg.camera.height,
-                    self._cfg.scan.edge_margin_px,
-                )
+                  match_left = self._matches_target(det_left)
+                  match_right = self._matches_target(det_right)
+                  same_class = self._same_valid_class(det_left, det_right)
+                  edge_ok_left = bbox_margin_ok(
+                      det_left,
+                      self._cfg.camera.width,
+                      self._cfg.camera.height,
+                      self._cfg.scan.edge_margin_px,
+                  )
+                  edge_ok_right = bbox_margin_ok(
+                      det_right,
+                      self._cfg.camera.width,
+                      self._cfg.camera.height,
+                      self._cfg.scan.edge_margin_px,
+                  )
 
-                dist_result: StereoDistanceResult = (
-                    self._distance_estimator.estimate(det_left, det_right)
-                    if same_class
-                    else StereoDistanceResult(
-                        distance_m=None, distance_cm=None,
-                        disparity_px=None, dy_px=None,
-                        error="no_same_class",
-                    )
-                )
+                  dist_result: StereoDistanceResult = (
+                      self._distance_estimator.estimate(det_left, det_right)
+                      if same_class
+                      else StereoDistanceResult(
+                          distance_m=None, distance_cm=None,
+                          disparity_px=None, dy_px=None,
+                          error="no_same_class",
+                      )
+                  )
 
-                confirmed = (
-                    match_left and match_right
-                    and same_class
-                    and edge_ok_left and edge_ok_right
-                )
+                  confirmed = (
+                      match_left and match_right
+                      and same_class
+                      and edge_ok_left and edge_ok_right
+                  )
 
-                self._log_frame(
-                    ang, det_left, det_right,
-                    match_left, match_right,
-                    edge_ok_left, edge_ok_right,
-                    same_class, dist_result,
-                )
+                  self._log_frame(
+                      ang, det_left, det_right,
+                      match_left, match_right,
+                      edge_ok_left, edge_ok_right,
+                      same_class, dist_result,
+                  )
 
-                ann_left = self._detector.draw(frame_left, det_left, "L: ")
-                ann_right = self._detector.draw(frame_right, det_right, "R: ")
-                ts = int(time.time() * 1000)
+                  ann_left = self._detector.draw(frame_left, det_left, "L: ")
+                  ann_right = self._detector.draw(frame_right, det_right, "R: ")
+                  ts = int(time.time() * 1000)
 
-                self._save_per_camera(
-                    event_idx, ts, ang,
-                    ann_left, ann_right,
-                    det_left, det_right,
-                    match_left, match_right,
-                )
+                  if not self._cfg.scan.view:
+                      self._save_per_camera(
+                          event_idx, ts, ang,
+                          ann_left, ann_right,
+                          det_left, det_right,
+                          match_left, match_right,
+                      )
 
-                if confirmed:
-                    self._save_combined(
-                        event_idx, ts, ang,
-                        ann_left, ann_right,
-                        det_left, dist_result,
-                    )
+                      if confirmed:
+                          self._save_combined(
+                              event_idx, ts, ang,
+                              ann_left, ann_right,
+                              det_left, dist_result,
+                          )
 
-                if self._cfg.scan.view:
-                    quit_requested = self._show_preview(
-                        ann_left, ann_right,
-                        ang, same_class,
-                        edge_ok_left, edge_ok_right,
-                        dist_result,
-                    )
-                    if quit_requested:
-                        print("[Scanner] User exit.")
-                        return None
+                  quit_requested = self._show_preview(
+                          ann_left, ann_right,
+                          ang, same_class,
+                          edge_ok_left, edge_ok_right,
+                          dist_result,
+                          det_left,
+                      )
+                  if quit_requested:
+                      print("[Scanner] User pressed 'c' — stopping.")
+                      return None
 
-                if match_left or match_right:
-                    event_idx += 1
+                  if match_left or match_right:
+                      event_idx += 1
 
-                if confirmed:
-                    return self._build_result(ang, det_left, det_right, dist_result)
+                  if confirmed:
+                      self._build_result(ang, det_left, det_right, dist_result)
 
         finally:
             self._cleanup()
@@ -284,8 +287,28 @@ class Scanner:
         same_class: bool,
         edge_ok_left: bool, edge_ok_right: bool,
         dist_result: StereoDistanceResult,
+        det_left: Optional[DetResult] = None,
     ) -> bool:
-        """Render live preview. Returns ``True`` if user asked to quit."""
+        """Render live preview. Returns ``True`` if user pressed 'c' to quit."""
+        # Draw distance inside the bounding box on the left frame
+        if (
+            det_left is not None
+            and det_left.is_valid
+            and det_left.bbox is not None
+            and dist_result.is_valid
+        ):
+            x, y, w, h = det_left.bbox
+            dist_text = f"{dist_result.distance_cm:.1f} cm"
+            (tw, th), _ = cv2.getTextSize(
+                dist_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2
+            )
+            tx = x + (w - tw) // 2
+            ty = y + (h + th) // 2
+            cv2.putText(
+                ann_left, dist_text, (tx, ty),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2,
+            )
+
         combo = hstack_resize(ann_left, ann_right, max_width=1920)
         extra = (
             f"SAME={'Y' if same_class else 'N'}  "
@@ -300,9 +323,11 @@ class Scanner:
             ),
             extra_status=extra,
         )
-        cv2.imshow("Stereo Scan (L | R)", combo)
-        key = cv2.waitKey(1) & 0xFF
-        return key in (27, ord("q"))  # ESC or 'q'
+        if hparams.SHOW_PREVIEW:
+            cv2.imshow("Stereo Scan (L | R)", combo)
+            key = cv2.waitKey(1) & 0xFF
+            return key == ord("c")  # press 'c' to stop
+        return False
 
     @staticmethod
     def _log_frame(
@@ -369,11 +394,10 @@ class Scanner:
             self._servo.stop()
         except Exception:
             pass
-        if self._cfg.scan.view:
-            try:
-                cv2.destroyAllWindows()
-            except Exception:
-                pass
+        try:
+            cv2.destroyAllWindows()
+        except Exception:
+            pass
 
     @staticmethod
     def _prepare_output_dirs(base: str) -> Dict[str, Path]:
