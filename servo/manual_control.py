@@ -12,7 +12,12 @@ Commands at the prompt:
     q          – quit
 """
 
+import sys
+from pathlib import Path
 from time import sleep
+
+# Allow `import hparams` regardless of where the script is invoked from
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rpi_hardware_pwm import HardwarePWM
 
