@@ -110,13 +110,13 @@ IMU_STILL_COUNT_LIMIT: int = 5     # consecutive still samples before zeroing ve
 IMU_CALIBRATION_SAMPLES: int = 1000
 GYRO_SENSITIVITY: float = 131.0    # LSB / (°/s) at ±250 °/s full-scale range
 GYRO_RATE_DEADBAND: float = 0.5    # °/s below which gyro rate is treated as zero (noise floor)
-GYRO_CORRECTION_GAIN: float = 2  # motor duty-cycle adjustment per °/s of rotation rate
+GYRO_CORRECTION_GAIN: float = 1.5  # motor duty-cycle adjustment per °/s of rotation rate
 
 # ──────────────────────────────────────────────────────────────
 # Navigator — movement tuning
 # ──────────────────────────────────────────────────────────────
 NAV_DRIVE_SPEED: float = 100.0        # base motor duty-cycle [%] for straight driving
-MOTOR_LEFT_TRIM: float = 0.0          # static offset for left motor [%]: positive = speed up left, negative = slow down left
+MOTOR_LEFT_TRIM: float = 50.0          # static offset for left motor [%]: positive = speed up left, negative = slow down left
 NAV_ROTATE_SPEED: float = 45.0       # motor duty-cycle [%] while rotating
 NAV_ROTATE_TOLERANCE_DEG: float = 2.0  # stop rotating when within this many degrees of target
 NAV_STOP_MARGIN_MM: float = 15.0     # stop this many mm before target (overshoot compensation)
