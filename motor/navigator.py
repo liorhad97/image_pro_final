@@ -90,7 +90,7 @@ class Navigator:
         off_x: float,
         off_y: float,
         off_gz: float,
-        speed: float = 50.0,
+        speed: float = 80.0,
         stop_margin_mm: float = 15.0,
     ) -> None:
         """
@@ -137,7 +137,8 @@ class Navigator:
             dy += vy * dt
 
             # Proportional correction on current rotation rate (not accumulated yaw).
-            # Using gz directly prevents drift from compounding over time.
+            # gz < 0 → robot turning left  → speed - gz*gain speeds up left motor  ✓
+            # gz > 0 → robot turning right → speed - gz*gain slows  left motor     ✓
             self._motor.set_motors(speed - gz * HP.GYRO_CORRECTION_GAIN, speed + gz * HP.GYRO_CORRECTION_GAIN)
             time.sleep(0.01)
 
