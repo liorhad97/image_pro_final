@@ -332,6 +332,7 @@ def move_by_angle_and_distance(
     try:
         drive_dist(5.1, ox, oy, ogz, camera_servo=camera_servo)
         rotate_to_angle(angle, ogz, camera_servo=camera_servo)
+        _center_camera_servo(camera_servo)
         time.sleep(0.5)
 
         # Move to the desired distance with continuous steering corrections.
