@@ -15,9 +15,9 @@ DETECT_COLOUR: str = "red"   # "red" | "blue" | "green" | "yellow"
 
 _COLOUR_PRESETS: Dict[str, Dict[str, Tuple[int, int, int]]] = {
     "red": {                              # wraps around the 0°/180° boundary
-        "hsv_lo1": (0,   60,  40),
-        "hsv_hi1": (12,  255, 255),
-        "hsv_lo2": (165, 60,  40),
+        "hsv_lo1": (0,   150,  50),#
+        "hsv_hi1": (5,  255, 255),
+        "hsv_lo2": (170, 150,  50),
         "hsv_hi2": (180, 255, 255),
     },
     "blue": {
