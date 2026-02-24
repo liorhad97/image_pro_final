@@ -121,10 +121,6 @@ class Navigator:
             # Convert raw accelerometer to mm/s²
             ax = ((self._imu.read_raw(self._imu._REG_ACCEL_X) - off_x) / HP.IMU_ACCEL_SCALE) * HP.IMU_ACCEL_MS2
             ay = ((self._imu.read_raw(self._imu._REG_ACCEL_Y) - off_y) / HP.IMU_ACCEL_SCALE) * HP.IMU_ACCEL_MS2
-            # Current rotation rate [°/s] — apply a deadband to ignore gyro noise
-            gz = (self._imu.read_raw(self._imu._REG_GYRO_Z) - off_gz) / self._GYRO_SENSITIVITY
-            gz = 0.0 if abs(gz) < HP.GYRO_RATE_DEADBAND else gz
-
             # Suppress accelerometer noise below the deadzone threshold
             ax = 0.0 if abs(ax) < HP.IMU_NOISE_THRESHOLD else ax
             ay = 0.0 if abs(ay) < HP.IMU_NOISE_THRESHOLD else ay
@@ -135,10 +131,8 @@ class Navigator:
             dx += vx * dt
             dy += vy * dt
 
-            # Proportional correction on current rotation rate (not accumulated yaw).
-            # gz < 0 → robot turning left  → speed - gz*gain speeds up left motor  ✓
-            # gz > 0 → robot turning right → speed - gz*gain slows  left motor     ✓
-            self._motor.set_motors(speed - gz * HP.GYRO_CORRECTION_GAIN, speed + gz * HP.GYRO_CORRECTION_GAIN)
+            # Static trim compensates for physical motor speed difference.
+            self._motor.set_motors(speed + HP.MOTOR_LEFT_TRIM, speed)
             time.sleep(HP.NAV_LOOP_SLEEP_S)
 
         self._motor.stop()
