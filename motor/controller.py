@@ -110,4 +110,5 @@ class MotorController:
         """Stop PWM output and release all GPIO resources."""
         self._pwm_a.stop()
         self._pwm_b.stop()
+        del self._pwm_a, self._pwm_b  # force __del__ before GPIO.cleanup() nulls _chip
         GPIO.cleanup()
