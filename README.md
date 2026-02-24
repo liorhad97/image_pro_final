@@ -80,22 +80,41 @@ Commands at the prompt:
 | `c` | Calibration sweep: 0 → 90 → 180 → 90 → 0 |
 | `q` | Quit |
 
-## Motor distance test (`test_motors.py`)
+## Straight-line drive test (`test_drive_distance.py`)
 
-Interactive script to test motors by driving a specified distance using IMU feedback.
+Drive straight ahead a given distance using IMU dead-reckoning and gyro correction.
 
 ```bash
-python3 test_motors.py
+python test_drive_distance.py
 ```
 
-You will be prompted to enter a target distance in millimeters:
+You will be prompted to enter a distance in centimetres:
 
 ```
-Enter target distance in millimeters (e.g. 400): 400
+Enter distance (cm): 20
 ```
 
-The car will calibrate the IMU, drive to the target distance, then stop automatically.
+The robot calibrates the IMU, drives straight to the target distance, then stops.
 Press `Ctrl+C` at any time for an emergency stop.
+
+## Angle + distance drive test (`test_angle_motors.py`)
+
+Two modes — rotate to an angle then drive, or run a preset rotation sweep.
+
+```bash
+python test_angle_motors.py
+```
+
+```
+Choose mode (test / normal): normal
+Enter angle (0–180°): 90
+Enter distance (cm): 20
+```
+
+| Mode | What it does |
+|------|--------------|
+| `normal` | Rotate to the given angle then drive the given distance |
+| `test` | Automatic sweep through 0°, 45°, 90°, 135°, 180° |
 
 ## Distance tool (`measure_distance.py`)
 
