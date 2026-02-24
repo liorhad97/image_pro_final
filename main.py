@@ -47,6 +47,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
     g_scan.add_argument("--view",   action="store_true",                     help="Show live OpenCV preview window")
     g_scan.add_argument("--outdir", type=str,   default=HP.SCAN_OUTDIR,     help="Directory for saved detections")
     g_scan.add_argument("--edge-margin", type=int, default=HP.SCAN_EDGE_MARGIN_PX, help="Min pixels from edge for valid bbox")
+    g_scan.add_argument(
+        "--center-left-frac",
+        type=float,
+        default=HP.SCAN_CENTER_LEFT_FRAC,
+        help="Left vertical gate as frame-width fraction (0..1)",
+    )
+    g_scan.add_argument(
+        "--center-right-frac",
+        type=float,
+        default=HP.SCAN_CENTER_RIGHT_FRAC,
+        help="Right vertical gate as frame-width fraction (0..1)",
+    )
 
     # Camera
     g_cam = ap.add_argument_group("Camera")
@@ -97,6 +109,8 @@ def build_config(args: argparse.Namespace) -> AppConfig:
             step_deg=args.step,
             settle_s=args.settle,
             edge_margin_px=args.edge_margin,
+            center_left_frac=args.center_left_frac,
+            center_right_frac=args.center_right_frac,
             outdir=args.outdir,
             view=args.view,
             target=target,

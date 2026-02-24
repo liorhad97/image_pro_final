@@ -110,6 +110,8 @@ SCAN_STEP_DEG: int = 5           # servo step size per sweep position [degrees]
 SCAN_SETTLE_S: float = 0.5      # wait time after each servo move [s]
 SCAN_EDGE_MARGIN_PX: int = 10    # min pixels from frame edge for a valid bbox
 SCAN_OUTDIR: str = "outputs"     # directory for saved detections
+SCAN_CENTER_LEFT_FRAC: float = 0.35   # left vertical gate as frame-width fraction
+SCAN_CENTER_RIGHT_FRAC: float = 0.65  # right vertical gate as frame-width fraction
 
 # ──────────────────────────────────────────────────────────────
 # Target tracker (follow-mode)

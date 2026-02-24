@@ -99,10 +99,12 @@ class Scanner:
         Start the servo sweep and return the first confirmed :class:`ScanResult`,
         or ``None`` if the user exits early.
         """
+        left_gate_px, right_gate_px = self._center_gate_bounds_px()
         print(
             f"[Scanner] Starting — target='{self._cfg.scan.target or 'Any'}' | "
             f"resolution={self._cfg.camera.width}x{self._cfg.camera.height} | "
-            f"baseline={self._cfg.stereo.baseline_m}m | fx={self._cfg.stereo.fx_px}px"
+            f"baseline={self._cfg.stereo.baseline_m}m | fx={self._cfg.stereo.fx_px}px | "
+            f"center_gate=[{left_gate_px:.0f}px,{right_gate_px:.0f}px]"
         )
 
         self._servo.start(angle=90.0)
@@ -219,11 +221,27 @@ class Scanner:
         return forward + backward[1:-1]
 
     def _matches_target(self, det: DetResult) -> bool:
-        if not det.found:
+        if not det.is_valid:
+            return False
+        if not self._is_inside_center_gate(det):
             return False
         if self._cfg.scan.target is None:
             return True
         return det.cls == self._cfg.scan.target
+
+    def _center_gate_bounds_px(self) -> tuple[float, float]:
+        width = float(self._cfg.camera.width)
+        left_frac = max(0.0, min(1.0, self._cfg.scan.center_left_frac))
+        right_frac = max(0.0, min(1.0, self._cfg.scan.center_right_frac))
+        left_frac, right_frac = sorted((left_frac, right_frac))
+        return width * left_frac, width * right_frac
+
+    def _is_inside_center_gate(self, det: DetResult) -> bool:
+        if det.center is None:
+            return False
+        left_px, right_px = self._center_gate_bounds_px()
+        cx = float(det.center[0])
+        return left_px <= cx <= right_px
 
     @staticmethod
     def _same_valid_class(det_left: DetResult, det_right: DetResult) -> bool:
@@ -451,6 +469,11 @@ class Scanner:
         det_left: Optional[DetResult] = None,
     ) -> bool:
         """Render live preview. Returns ``True`` if user pressed 'c' to quit."""
+        left_gate_px, right_gate_px = self._center_gate_bounds_px()
+        for x in (int(round(left_gate_px)), int(round(right_gate_px))):
+            cv2.line(ann_left, (x, 0), (x, ann_left.shape[0] - 1), (0, 255, 255), 2)
+            cv2.line(ann_right, (x, 0), (x, ann_right.shape[0] - 1), (0, 255, 255), 2)
+
         # Draw distance inside the bounding box on the left frame
         if (
             det_left is not None

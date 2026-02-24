@@ -69,6 +69,8 @@ class ScanConfig:
     step_deg: int = HP.SCAN_STEP_DEG
     settle_s: float = HP.SCAN_SETTLE_S
     edge_margin_px: int = HP.SCAN_EDGE_MARGIN_PX
+    center_left_frac: float = HP.SCAN_CENTER_LEFT_FRAC
+    center_right_frac: float = HP.SCAN_CENTER_RIGHT_FRAC
     outdir: str = HP.SCAN_OUTDIR
     view: bool = False
     target: Optional[str] = None   # "Cube" | "Cylinder" | "Pyramid" | None
