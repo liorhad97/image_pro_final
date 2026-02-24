@@ -108,8 +108,20 @@ IMU_ACCEL_MS2: float = 9806.6      # 1 g in mm/s²
 IMU_NOISE_THRESHOLD: float = 400.0 # mm/s² below which motion is ignored
 IMU_STILL_COUNT_LIMIT: int = 5     # consecutive still samples before zeroing velocity
 IMU_CALIBRATION_SAMPLES: int = 1000
+GYRO_SENSITIVITY: float = 131.0    # LSB / (°/s) at ±250 °/s full-scale range
 GYRO_RATE_DEADBAND: float = 0.5    # °/s below which gyro rate is treated as zero (noise floor)
 GYRO_CORRECTION_GAIN: float = 1.5  # motor duty-cycle adjustment per °/s of rotation rate
+
+# ──────────────────────────────────────────────────────────────
+# Navigator — movement tuning
+# ──────────────────────────────────────────────────────────────
+NAV_DRIVE_SPEED: float = 90.0        # base motor duty-cycle [%] for straight driving
+NAV_ROTATE_SPEED: float = 45.0       # motor duty-cycle [%] while rotating
+NAV_ROTATE_TOLERANCE_DEG: float = 2.0  # stop rotating when within this many degrees of target
+NAV_STOP_MARGIN_MM: float = 15.0     # stop this many mm before target (overshoot compensation)
+NAV_CLEARANCE_CM: float = 5.1        # forward clearance drive before rotating [cm]
+NAV_LOOP_SLEEP_S: float = 0.01       # control loop sleep [s] (both drive and rotate loops)
+NAV_SETTLE_S: float = 0.5            # pause after rotation before driving [s]
 
 # ──────────────────────────────────────────────────────────────
 # Servo PWM

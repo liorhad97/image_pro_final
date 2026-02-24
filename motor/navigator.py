@@ -29,8 +29,7 @@ class Navigator:
         Initialised IMU reader instance.
     """
 
-    # Gyro sensitivity at ±250°/s full scale: 131 LSB / (°/s)
-    _GYRO_SENSITIVITY = 131.0
+    _GYRO_SENSITIVITY = HP.GYRO_SENSITIVITY
 
     def __init__(self, motor: MotorController, imu: IMUReader) -> None:
         self._motor = motor
@@ -42,8 +41,8 @@ class Navigator:
         self,
         target_angle: float,
         off_gz: float,
-        tolerance_deg: float = 2.0,
-        speed: float = 45.0,
+        tolerance_deg: float = HP.NAV_ROTATE_TOLERANCE_DEG,
+        speed: float = HP.NAV_ROTATE_SPEED,
     ) -> None:
         """
         Rotate the robot to *target_angle* degrees using gyro integration.
@@ -80,7 +79,7 @@ class Navigator:
 
             direction = "rotate_left" if (relative_target - curr_yaw) > 0 else "rotate_right"
             self._motor.set_motors(speed, speed, direction)
-            time.sleep(0.01)
+            time.sleep(HP.NAV_LOOP_SLEEP_S)
 
         self._motor.stop()
 
@@ -90,8 +89,8 @@ class Navigator:
         off_x: float,
         off_y: float,
         off_gz: float,
-        speed: float = 80.0,
-        stop_margin_mm: float = 15.0,
+        speed: float = HP.NAV_DRIVE_SPEED,
+        stop_margin_mm: float = HP.NAV_STOP_MARGIN_MM,
     ) -> None:
         """
         Drive straight for *target_cm* centimetres using accelerometer
@@ -140,7 +139,7 @@ class Navigator:
             # gz < 0 → robot turning left  → speed - gz*gain speeds up left motor  ✓
             # gz > 0 → robot turning right → speed - gz*gain slows  left motor     ✓
             self._motor.set_motors(speed - gz * HP.GYRO_CORRECTION_GAIN, speed + gz * HP.GYRO_CORRECTION_GAIN)
-            time.sleep(0.01)
+            time.sleep(HP.NAV_LOOP_SLEEP_S)
 
         self._motor.stop()
 
@@ -148,7 +147,7 @@ class Navigator:
         self,
         angle: float,
         distance_cm: float,
-        forward_clearance_cm: float = 5.1,
+        forward_clearance_cm: float = HP.NAV_CLEARANCE_CM,
     ) -> None:
         """
         Full movement sequence:
@@ -175,7 +174,7 @@ class Navigator:
 
         # Rotate to the desired heading
         self.rotate_to_angle(angle, off_gz)
-        time.sleep(0.5)   # brief pause to let the robot settle after rotation
+        time.sleep(HP.NAV_SETTLE_S)   # brief pause to let the robot settle after rotation
 
         # Drive to the target distance
         self.drive_dist(distance_cm, off_x, off_y, off_gz)
