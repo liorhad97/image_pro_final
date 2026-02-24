@@ -113,7 +113,6 @@ class Navigator:
         target_mm = target_cm * 10.0
         vx, vy = 0.0, 0.0     # velocity [mm/s]
         dx, dy = 0.0, 0.0     # displacement [mm]
-        yaw    = 0.0           # accumulated heading error [°]
         last_t = time.time()
 
         while math.sqrt(dx ** 2 + dy ** 2) < (target_mm - stop_margin_mm):
@@ -123,7 +122,9 @@ class Navigator:
             # Convert raw accelerometer to mm/s²
             ax = ((self._imu.read_raw(self._imu._REG_ACCEL_X) - off_x) / HP.IMU_ACCEL_SCALE) * HP.IMU_ACCEL_MS2
             ay = ((self._imu.read_raw(self._imu._REG_ACCEL_Y) - off_y) / HP.IMU_ACCEL_SCALE) * HP.IMU_ACCEL_MS2
+            # Current rotation rate [°/s] — apply a deadband to ignore gyro noise
             gz = (self._imu.read_raw(self._imu._REG_GYRO_Z) - off_gz) / self._GYRO_SENSITIVITY
+            gz = 0.0 if abs(gz) < HP.GYRO_RATE_DEADBAND else gz
 
             # Suppress accelerometer noise below the deadzone threshold
             ax = 0.0 if abs(ax) < HP.IMU_NOISE_THRESHOLD else ax
@@ -134,10 +135,10 @@ class Navigator:
             vy += ay * dt
             dx += vx * dt
             dy += vy * dt
-            yaw += gz * dt
 
-            # Proportional gyro correction to keep driving straight
-            self._motor.set_motors(speed - yaw * 1.8, speed + yaw * 1.8)
+            # Proportional correction on current rotation rate (not accumulated yaw).
+            # Using gz directly prevents drift from compounding over time.
+            self._motor.set_motors(speed - gz * HP.GYRO_CORRECTION_GAIN, speed + gz * HP.GYRO_CORRECTION_GAIN)
             time.sleep(0.01)
 
         self._motor.stop()

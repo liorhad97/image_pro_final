@@ -108,6 +108,8 @@ IMU_ACCEL_MS2: float = 9806.6      # 1 g in mm/s²
 IMU_NOISE_THRESHOLD: float = 400.0 # mm/s² below which motion is ignored
 IMU_STILL_COUNT_LIMIT: int = 5     # consecutive still samples before zeroing velocity
 IMU_CALIBRATION_SAMPLES: int = 1000
+GYRO_RATE_DEADBAND: float = 0.5    # °/s below which gyro rate is treated as zero (noise floor)
+GYRO_CORRECTION_GAIN: float = 1.5  # motor duty-cycle adjustment per °/s of rotation rate
 
 # ──────────────────────────────────────────────────────────────
 # Servo PWM
