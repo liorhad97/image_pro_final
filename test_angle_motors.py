@@ -16,9 +16,11 @@ CAMERA_SERVO_TURN_OFFSET_DEG = 20.0
 DRIVE_BASE_SPEED = 50.0
 DRIVE_YAW_GAIN = 1.8
 DRIVE_LOOP_SLEEP_S = 0.01
-VISION_STEER_GAIN = 18.0
-VISION_MAX_STEER = 16.0
+VISION_STEER_GAIN = 28.0
+VISION_MAX_STEER = 24.0
 VISION_POLL_INTERVAL_S = 0.08
+DRIVE_MIN_TURN_CORRECTION = 4.0
+SERVO_TURN_MIN_WHEEL_DELTA = 8.0
 
 # --- Your Motor Setup ---
 GPIO.cleanup()
@@ -190,7 +192,7 @@ def _align_servo_with_wheels(
         return
 
     wheel_delta = speed_r - speed_l
-    if abs(wheel_delta) < 0.75:
+    if abs(wheel_delta) < SERVO_TURN_MIN_WHEEL_DELTA:
         return
 
     if wheel_delta > 0:
@@ -289,6 +291,8 @@ def drive_dist(
 
         # Correction for deviation while driving
         correction = (yaw * DRIVE_YAW_GAIN) + vision_steer
+        if abs(correction) < DRIVE_MIN_TURN_CORRECTION:
+            correction = 0.0
         speed_l = DRIVE_BASE_SPEED - correction
         speed_r = DRIVE_BASE_SPEED + correction
         _align_servo_with_wheels(camera_servo, speed_l, speed_r)
