@@ -9,7 +9,7 @@ import cv2
 
 import hparams
 from config import AppConfig
-from detection.detector import BlueObjectDetector
+from detection.detector import RedObjectDetector
 from detection.models import DetResult
 from servo.controller import ServoController
 from stereo.camera import StereoCams
@@ -65,9 +65,11 @@ class Scanner:
     def __init__(self, config: AppConfig) -> None:
         self._cfg = config
 
-        self._detector = BlueObjectDetector(
-            hsv_lo=config.detection.hsv_lo,
-            hsv_hi=config.detection.hsv_hi,
+        self._detector = RedObjectDetector(
+            hsv_lo1=config.detection.hsv_lo,
+            hsv_hi1=config.detection.hsv_hi,
+            hsv_lo2=hparams.HSV_LO2,
+            hsv_hi2=hparams.HSV_HI2,
             min_area=config.detection.min_area,
             downscale_width=config.detection.downscale_width,
         )
@@ -244,7 +246,20 @@ class Scanner:
         the target was lost and sweep mode should resume.
         """
         frame_mid_x = self._cfg.camera.width / 2.0
-        deadband_px = max(hparams.TRACKER_DEADBAND_MIN_PX, self._cfg.camera.width * hparams.TRACKER_DEADBAND_FRAC)
+        alignment_threshold_px = hparams.ALIGNMENT_AVERAGE_THRESHOLD_PX
+
+        offsets = []
+        if det_left.center:
+            offsets.append(abs(det_left.center[0] - frame_mid_x))
+        if det_right.center:
+            offsets.append(abs(det_right.center[0] - frame_mid_x))
+
+        if offsets:
+            average_offset = sum(offsets) / len(offsets)
+            if average_offset > alignment_threshold_px:
+                print(f"[INFO] Average offset ({average_offset}px) exceeds threshold ({alignment_threshold_px}px). Aligning object.")
+                # Logic to adjust servo or camera to align the object
+
         kp_deg = hparams.TRACKER_KP_DEG
         max_step_deg = hparams.TRACKER_MAX_STEP_DEG
         lost_limit = hparams.TRACKER_LOST_LIMIT

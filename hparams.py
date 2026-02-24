@@ -9,9 +9,18 @@ from typing import Tuple
 # ──────────────────────────────────────────────────────────────
 # HSV colour thresholds  (hue 0-179, sat 0-255, val 0-255)
 # ──────────────────────────────────────────────────────────────
+""" blue
 HSV_LO: Tuple[int, int, int] = (105, 120, 50)
 HSV_HI: Tuple[int, int, int] = (123, 255, 255)
+"""
+# red upper range
+HSV_LO1: Tuple[int, int, int] = (0, 60, 40)
+HSV_HI1: Tuple[int, int, int] = (12, 255, 255)
 
+# red lower range
+# אדום עמוק/בורדו
+HSV_LO2: Tuple[int, int, int] = (165, 60, 40)
+HSV_HI2: Tuple[int, int, int] = (180, 255, 255)
 # ──────────────────────────────────────────────────────────────
 # Detection filtering
 # ──────────────────────────────────────────────────────────────
@@ -81,7 +90,7 @@ IMU_CALIBRATION_SAMPLES: int = 1000
 # ──────────────────────────────────────────────────────────────
 SERVO_PWM_CHANNEL: int = 0
 SERVO_PWM_CHIP: int = 0
-SERVO_MIN_US: int = 645       # pulse width [µs] at 0°  (lowered from 800 – servo was sitting ~15° high at 0°)
+SERVO_MIN_US: int = 590       # pulse width [µs] at 0°  (lowered from 800 – servo was sitting ~15° high at 0°)
 SERVO_MAX_US: int = 2500      # pulse width [µs] at 180°
 SERVO_PWM_FREQUENCY_HZ: int = 50        # standard RC servo frequency
 SERVO_PERIOD_US: int = 20_000           # 1 / 50 Hz = 20 ms = 20 000 µs
@@ -98,7 +107,7 @@ STEREO_MAX_VERTICAL_OFFSET_PX: float = 60.0  # max |yL-yR| for a valid estimate
 # Scan behaviour
 # ──────────────────────────────────────────────────────────────
 SCAN_STEP_DEG: int = 5           # servo step size per sweep position [degrees]
-SCAN_SETTLE_S: float = 0.05      # wait time after each servo move [s]
+SCAN_SETTLE_S: float = 0.5      # wait time after each servo move [s]
 SCAN_EDGE_MARGIN_PX: int = 10    # min pixels from frame edge for a valid bbox
 SCAN_OUTDIR: str = "outputs"     # directory for saved detections
 
@@ -112,3 +121,9 @@ TRACKER_MAX_STEP_DEG: float = 4.0      # maximum pan step per update [degrees]
 TRACKER_LOST_LIMIT: int = 20           # consecutive missed frames before giving up
 TRACKER_STEP_SLEEP_S: float = 0.03     # sleep after a pan move [s]
 TRACKER_LOOP_SLEEP_S: float = 0.01     # base loop sleep [s]
+
+# Maximum allowed distance from the center in pixels for object alignment
+ALIGNMENT_MAX_OFFSET_PX: int = 50
+
+# Maximum average offset allowed between the object and the center [px]
+ALIGNMENT_AVERAGE_THRESHOLD_PX: int = 30

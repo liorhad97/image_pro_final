@@ -24,13 +24,17 @@ class BlueObjectDetector:
 
     def __init__(
         self,
-        hsv_lo: Tuple[int, int, int] = HP.HSV_LO,
-        hsv_hi: Tuple[int, int, int] = HP.HSV_HI,
+        hsv_lo1: Tuple[int, int, int] = HP.HSV_LO1,
+        hsv_hi1: Tuple[int, int, int] = HP.HSV_HI1,
+        hsv_lo2: Tuple[int, int, int] = HP.HSV_LO2,
+        hsv_hi2: Tuple[int, int, int] = HP.HSV_HI2,
         min_area: int = HP.MIN_AREA,
         downscale_width: int = HP.DOWNSCALE_WIDTH,
     ) -> None:
-        self._hsv_lo = np.array(hsv_lo, dtype=np.uint8)
-        self._hsv_hi = np.array(hsv_hi, dtype=np.uint8)
+        self._hsv_lo1 = np.array(hsv_lo1, dtype=np.uint8)
+        self._hsv_hi1 = np.array(hsv_hi1, dtype=np.uint8)
+        self._hsv_lo2 = np.array(hsv_lo2, dtype=np.uint8)
+        self._hsv_hi2 = np.array(hsv_hi2, dtype=np.uint8)
         self._min_area = min_area
         self._downscale_width = downscale_width
 
@@ -137,7 +141,9 @@ class BlueObjectDetector:
 
     def _build_raw_mask(self, bgr: np.ndarray) -> np.ndarray:
         hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-        return cv2.inRange(hsv, self._hsv_lo, self._hsv_hi)
+        mask1 = cv2.inRange(hsv, self._hsv_lo1, self._hsv_hi1)
+        mask2 = cv2.inRange(hsv, self._hsv_lo2, self._hsv_hi2)
+        return cv2.bitwise_or(mask1, mask2)
 
     def _apply_morphology(self, mask: np.ndarray) -> np.ndarray:
         closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, self._kernel, iterations=HP.MORPH_CLOSE_ITER)
@@ -195,3 +201,31 @@ class BlueObjectDetector:
             int(w * factor), int(h * factor),
             int(cx * factor), int(cy * factor),
         )
+
+
+class RedObjectDetector(BlueObjectDetector):
+    """
+    Detects the largest red object in a BGR frame using HSV thresholding,
+    morphological cleanup, and contour analysis. Inherits from BlueObjectDetector.
+    """
+    def __init__(
+        self,
+        hsv_lo1: Tuple[int, int, int] = HP.HSV_LO1,
+        hsv_hi1: Tuple[int, int, int] = HP.HSV_HI1,
+        hsv_lo2: Tuple[int, int, int] = HP.HSV_LO2,
+        hsv_hi2: Tuple[int, int, int] = HP.HSV_HI2,
+        min_area: int = HP.MIN_AREA,
+        downscale_width: int = HP.DOWNSCALE_WIDTH,
+    ) -> None:
+        super().__init__(
+            hsv_lo1=hsv_lo1, hsv_hi1=hsv_hi1,
+            min_area=min_area, downscale_width=downscale_width
+        )
+        self._hsv_lo2 = np.array(hsv_lo2, dtype=np.uint8)
+        self._hsv_hi2 = np.array(hsv_hi2, dtype=np.uint8)
+
+    def _build_raw_mask(self, bgr: np.ndarray) -> np.ndarray:
+        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        mask1 = cv2.inRange(hsv, self._hsv_lo1, self._hsv_hi1)
+        mask2 = cv2.inRange(hsv, self._hsv_lo2, self._hsv_hi2)
+        return cv2.bitwise_or(mask1, mask2)
