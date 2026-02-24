@@ -1,17 +1,4 @@
 #!/usr/bin/env python3
-"""
-Live stereo distance measurement.
-
-Captures frames from both cameras, detects the blue object in each,
-and shows a side-by-side window with the measured distance.
-
-Usage
------
-    python measure_distance.py
-    python measure_distance.py --baseline-m 0.075 --fx-px 1893
-
-Press 'q' or Esc to quit.
-"""
 from __future__ import annotations
 
 import argparse
@@ -25,6 +12,7 @@ from stereo.camera import StereoCams
 from stereo.distance import StereoDistanceEstimator
 from utils.image_utils import hstack_resize
 
+# live measurement tool that detects the blue object in both cameras and shows stereo distance in a window
 
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
@@ -76,11 +64,9 @@ def main() -> None:
 
             dist = estimator.estimate(det_left, det_right)
 
-            # ── annotate left frame ────────────────────────────────────────
             ann_left  = detector.draw(left_bgr,  det_left,  label_prefix="L: ")
             ann_right = detector.draw(right_bgr, det_right, label_prefix="R: ")
 
-            # ── distance overlay on left frame ─────────────────────────────
             if dist.is_valid:
                 label = (
                     f"Distance: {dist.distance_m:.3f} m  "
@@ -97,7 +83,6 @@ def main() -> None:
                 cv2.FONT_HERSHEY_SIMPLEX, 1.1, colour, 2,
             )
 
-            # ── disparity debug on right frame ─────────────────────────────
             if dist.debug:
                 disp_val = dist.debug.get("disparity_px", 0.0)
                 cv2.putText(
@@ -107,7 +92,6 @@ def main() -> None:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2,
                 )
 
-            # ── display ────────────────────────────────────────────────────
             combined = hstack_resize(ann_left, ann_right,
                                      max_width=args.downscale * 2)
             cv2.imshow("Stereo Distance Measurement  [q / Esc = quit]", combined)

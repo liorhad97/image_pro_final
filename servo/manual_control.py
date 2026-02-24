@@ -1,29 +1,14 @@
-"""
-Interactive servo manual-control script.
-
-Reads all PWM parameters from hparams.py so there is one source of truth.
-
-Usage (on the Raspberry Pi):
-    python servo/manual_control.py
-
-Commands at the prompt:
-    <number>   – move to that angle in degrees (0-180)
-    c          – run a full 0 → 180 → 0 calibration sweep
-    q          – quit
-"""
-
 import sys
 from pathlib import Path
 from time import sleep
 
-# Allow `import hparams` regardless of where the script is invoked from
+# interactive script to test servo movement by typing an angle or running a calibration sweep
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rpi_hardware_pwm import HardwarePWM
 
 import hparams as HP
 
-# ── PWM setup ──────────────────────────────────────────────────────────────────
 pwm = HardwarePWM(
     pwm_channel=HP.SERVO_PWM_CHANNEL,
     hz=HP.SERVO_PWM_FREQUENCY_HZ,
@@ -43,7 +28,6 @@ def move(angle: float) -> str:
     return f"→ {angle:.1f}°  (duty={duty:.2f}%,  pulse={HP.SERVO_MIN_US + (HP.SERVO_MAX_US - HP.SERVO_MIN_US) * angle / 180:.0f} µs)"
 
 
-# ── main ───────────────────────────────────────────────────────────────────────
 try:
     pwm.start(angle_to_duty(90))
     print(f"HW-PWM servo ready on GPIO12  (channel={HP.SERVO_PWM_CHANNEL}, "

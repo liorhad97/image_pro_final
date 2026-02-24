@@ -8,19 +8,8 @@ import numpy as np
 import hparams as HP
 from .models import DetResult
 
-
+# detects the largest blob matching the HSV color range then classifies its shape as Pyramid, Cube, or Cylinder
 class BlueObjectDetector:
-    """
-    Detects the largest blue object in a BGR frame using HSV thresholding,
-    morphological cleanup, and contour analysis.  Classifies the shape as
-    Pyramid, Cube, or Cylinder using simple geometric heuristics.
-
-    Usage
-    -----
-    detector = BlueObjectDetector()
-    result: DetResult = detector.detect(bgr_frame)
-    annotated = detector.draw(bgr_frame, result)
-    """
 
     def __init__(
         self,
@@ -37,18 +26,9 @@ class BlueObjectDetector:
         self._hsv_hi2 = np.array(hsv_hi2, dtype=np.uint8)
         self._min_area = min_area
         self._downscale_width = downscale_width
-
-        # Morphological structuring element (shared across calls)
         self._kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, HP.MORPH_KERNEL_SIZE)
 
-    # ------------------------------------------------------------------ public
     def detect(self, bgr: np.ndarray) -> DetResult:
-        """
-        Run blue-segmentation + shape classification on *bgr*.
-
-        The image is optionally downscaled for speed; all coordinates and
-        masks are mapped back to the original resolution before returning.
-        """
         H, W = bgr.shape[:2]
         scale, small = self._maybe_downscale(bgr, W)
 
@@ -96,7 +76,6 @@ class BlueObjectDetector:
         det: DetResult,
         label_prefix: str = "",
     ) -> np.ndarray:
-        """Return a copy of *bgr* annotated with the detection result."""
         out = bgr.copy()
 
         if not det.is_valid:
@@ -107,8 +86,8 @@ class BlueObjectDetector:
             )
             return out
 
-        x, y, w, h = det.bbox   # type: ignore[misc]
-        cx, cy = det.center      # type: ignore[misc]
+        x, y, w, h = det.bbox
+        cx, cy = det.center
 
         cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 3)
         cv2.circle(out, (cx, cy), 7, (0, 0, 255), -1)
@@ -124,7 +103,6 @@ class BlueObjectDetector:
         )
         return out
 
-    # ----------------------------------------------------------------- private
     def _maybe_downscale(
         self, bgr: np.ndarray, W: int
     ) -> Tuple[float, np.ndarray]:
@@ -164,6 +142,7 @@ class BlueObjectDetector:
             return raw_full, clean_full
         return raw, clean
 
+    # low extent and few vertices = Pyramid, high circularity or many vertices = Cylinder, else Cube
     @staticmethod
     def _classify(
         cnt: np.ndarray,
@@ -172,15 +151,6 @@ class BlueObjectDetector:
         w: int,
         h: int,
     ) -> str:
-        """
-        Geometric heuristics to label the contour as Pyramid, Cylinder, or Cube.
-
-        Notes
-        -----
-        - *extent*      = area / bounding-box area  (how tightly the blob fills its box)
-        - *circularity* = 4π·area / perimeter²       (1.0 = perfect circle)
-        - *n*           = vertex count after DP approximation
-        """
         extent = area / float(w * h + 1e-9)
         circularity = 4.0 * np.pi * area / (perimeter * perimeter + 1e-12)
         approx = cv2.approxPolyDP(cnt, HP.CLASSIFY_DP_EPSILON * perimeter, True)
@@ -204,10 +174,6 @@ class BlueObjectDetector:
 
 
 class RedObjectDetector(BlueObjectDetector):
-    """
-    Detects the largest red object in a BGR frame using HSV thresholding,
-    morphological cleanup, and contour analysis. Inherits from BlueObjectDetector.
-    """
     def __init__(
         self,
         hsv_lo1: Tuple[int, int, int] = HP.HSV_LO1,

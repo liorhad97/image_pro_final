@@ -3,7 +3,9 @@ import smbus2
 import time
 import math
 
-# --- Motor Settings (GPIO) ---
+# motor driver GPIO pins control direction via IN1-IN4 and speed via PWM duty cycle on ENA and ENB
+# accelerometer readings are double-integrated to estimate distance, noise below 400 mm/s² is ignored
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -38,10 +40,9 @@ def stop_motors():
     GPIO.output(IN4, GPIO.LOW)
 
 
-# --- IMU Settings ---
 bus = smbus2.SMBus(1)
 ADDR = 0x68
-bus.write_byte_data(ADDR, 0x6B, 0)  # Wake up sensor
+bus.write_byte_data(ADDR, 0x6B, 0)
 time.sleep(0.1)
 
 
@@ -56,8 +57,8 @@ def calibrate_xy(samples=1000):
     print("Calibrating XY plane... do not move the car")
     sum_x, sum_y = 0, 0
     for _ in range(samples):
-        sum_x += read_raw(0x3B)  # X axis
-        sum_y += read_raw(0x3D)  # Y axis
+        sum_x += read_raw(0x3B)
+        sum_y += read_raw(0x3D)
         time.sleep(0.002)
     return sum_x / samples, sum_y / samples
 
@@ -78,7 +79,6 @@ if __name__ == "__main__":
     TARGET_DIST_MM = get_target_distance()
     offset_x, offset_y = calibrate_xy()
 
-    # State variables
     vel_x, vel_y = 0.0, 0.0
     dist_x, dist_y = 0.0, 0.0
     total_dist = 0.0
@@ -96,15 +96,12 @@ if __name__ == "__main__":
             if dt <= 0:
                 continue
 
-            # Read sensor data
             raw_x = read_raw(0x3B)
             raw_y = read_raw(0x3D)
 
-            # Convert to acceleration (mm/s^2) at 2g scale
             acc_x = ((raw_x - offset_x) / 16384.0) * 9806.6
             acc_y = ((raw_y - offset_y) / 16384.0) * 9806.6
 
-            # Noise filter and integration
             if abs(acc_x) < 400 and abs(acc_y) < 400:
                 still_count += 1
                 if still_count > 5:
@@ -122,7 +119,7 @@ if __name__ == "__main__":
 
         print(f"\nTarget reached ({total_dist:.1f} mm). Stopping motors.")
         stop_motors()
-        time.sleep(1)  # Wait for car to fully stop
+        time.sleep(1)
 
     except KeyboardInterrupt:
         print("\nEmergency stop!")

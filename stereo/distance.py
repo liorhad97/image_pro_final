@@ -9,11 +9,10 @@ import numpy as np
 import hparams as HP
 from detection.models import DetResult
 
-
+# estimates depth using Z = (fx * baseline) / disparity where disparity is xLeft minus xRight in pixels
+# rejects estimates when vertical offset between the two detections exceeds the allowed threshold
 @dataclass
 class StereoDistanceResult:
-    """Holds the outcome of a stereo disparity-based distance estimate."""
-
     distance_m: Optional[float]
     distance_cm: Optional[float]
     disparity_px: Optional[float]
@@ -27,28 +26,6 @@ class StereoDistanceResult:
 
 
 class StereoDistanceEstimator:
-    """
-    Estimates the depth (Z, in metres) of a detected object using the
-    standard stereo disparity formula:
-
-        Z = (f_x * B) / |disparity|
-
-    where *f_x* is the horizontal focal length (pixels) and *B* is the
-    camera baseline (metres).
-
-    Parameters
-    ----------
-    fx_px : float
-        Horizontal focal length in pixels (from camera calibration).
-    baseline_m : float
-        Physical distance between the two camera optical centres (metres).
-    min_disparity_px : float
-        Minimum absolute disparity below which the result is considered
-        unreliable (avoids division-by-near-zero).
-    max_vertical_offset_px : float
-        Maximum allowed |y_left - y_right| before rejecting the estimate.
-        A large vertical offset usually indicates poor rectification.
-    """
 
     def __init__(
         self,
@@ -67,14 +44,7 @@ class StereoDistanceEstimator:
         self.min_disparity_px = min_disparity_px
         self.max_vertical_offset_px = max_vertical_offset_px
 
-    # ------------------------------------------------------------------ public
     def estimate(self, det_left: DetResult, det_right: DetResult) -> StereoDistanceResult:
-        """
-        Compute depth from *det_left* and *det_right* centre points.
-
-        Returns a :class:`StereoDistanceResult` whose ``error`` attribute
-        is ``None`` on success and contains a short reason string on failure.
-        """
         if not (det_left.is_valid and det_right.is_valid):
             return StereoDistanceResult(
                 distance_m=None, distance_cm=None,
@@ -82,8 +52,8 @@ class StereoDistanceEstimator:
                 error="missing_detection",
             )
 
-        xL, yL = det_left.center   # type: ignore[misc]
-        xR, yR = det_right.center  # type: ignore[misc]
+        xL, yL = det_left.center
+        xR, yR = det_right.center
 
         disparity = float(xL - xR)
         d_abs = abs(disparity)
@@ -122,7 +92,6 @@ class StereoDistanceEstimator:
             error=None,
         )
 
-    # ------------------------------------------------------------------ overlay
     @staticmethod
     def draw_overlay(
         img: np.ndarray,
@@ -130,11 +99,6 @@ class StereoDistanceEstimator:
         title: str = "",
         extra_status: str = "",
     ) -> np.ndarray:
-        """
-        Render disparity / distance diagnostics onto *img*.
-
-        Returns a copy; the original array is not mutated.
-        """
         out = img.copy()
         y0 = 35
 
@@ -161,8 +125,8 @@ class StereoDistanceEstimator:
 
         if result.is_valid:
             _put(
-                f"Distance Z = {result.distance_m:.3f} m "   # type: ignore[str-format]
-                f"({result.distance_cm:.1f} cm)",             # type: ignore[str-format]
+                f"Distance Z = {result.distance_m:.3f} m "
+                f"({result.distance_cm:.1f} cm)",
                 (0, 255, 0), 0.85,
             )
         else:

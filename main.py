@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-Entry point for the stereo-vision object scanner.
-
-Run:
-    python main.py --target Cube --view
-    python main.py --target Cylinder --step 3 --settle 0.03
-    python main.py                         # accept any blue object
-"""
 from __future__ import annotations
 
 import argparse
@@ -24,6 +16,7 @@ from config import (
 from scanner import Scanner
 from utils import normalize_target_name
 
+# parses CLI arguments, builds AppConfig, and starts the stereo scanner
 
 def build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
@@ -31,7 +24,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # Target
     ap.add_argument(
         "--target",
         type=str,
@@ -40,7 +32,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Cube | Cylinder | Pyramid | None  (None = any blue target)",
     )
 
-    # Scan behaviour
     g_scan = ap.add_argument_group("Scan behaviour")
     g_scan.add_argument("--step",   type=int,   default=HP.SCAN_STEP_DEG,    help="Servo step size (degrees)")
     g_scan.add_argument("--settle", type=float, default=HP.SCAN_SETTLE_S,   help="Settle time after each servo move (s)")
@@ -60,18 +51,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Right vertical gate as frame-width fraction (0..1)",
     )
 
-    # Camera
     g_cam = ap.add_argument_group("Camera")
     g_cam.add_argument("--width",  type=int, default=HP.CAMERA_WIDTH,  help="Capture width (px)")
     g_cam.add_argument("--height", type=int, default=HP.CAMERA_HEIGHT, help="Capture height (px)")
     g_cam.add_argument("--fps",    type=int, default=HP.CAMERA_FPS,    help="Target frame rate")
 
-    # Servo
     g_servo = ap.add_argument_group("Servo")
     g_servo.add_argument("--min-us", type=int, default=HP.SERVO_MIN_US, help="Servo min pulse (µs) = 0°")
     g_servo.add_argument("--max-us", type=int, default=HP.SERVO_MAX_US, help="Servo max pulse (µs) = 180°")
 
-    # Stereo distance
     g_stereo = ap.add_argument_group("Stereo distance")
     g_stereo.add_argument("--baseline-m", type=float, default=HP.STEREO_BASELINE_M,           help="Camera baseline (m)")
     g_stereo.add_argument("--fx-px",      type=float, default=HP.STEREO_FX_PX,               help="Focal length (px)")
@@ -98,7 +86,7 @@ def build_config(args: argparse.Namespace) -> AppConfig:
             min_us=args.min_us,
             max_us=args.max_us,
         ),
-        detection=DetectionConfig(),   # HSV defaults from config.py
+        detection=DetectionConfig(),
         stereo=StereoConfig(
             baseline_m=args.baseline_m,
             fx_px=args.fx_px,

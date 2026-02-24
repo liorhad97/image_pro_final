@@ -9,29 +9,9 @@ from picamera2 import Picamera2
 
 import hparams as HP
 
-
+# manages two Picamera2 instances and provides synchronized BGR frame pairs
+# warmup frames are discarded so auto-exposure and auto-white-balance can stabilize before real captures
 class StereoCams:
-    """
-    Manages two Picamera2 instances (left + right) and provides
-    synchronised BGR frame capture.
-
-    Per Picamera2 docs, ``format="RGB888"`` returns a uint8 3-channel array
-    that is already in BGR order suitable for OpenCV — no extra conversion
-    needed.
-
-    Parameters
-    ----------
-    cam0 : int
-        Camera index for the left camera.
-    cam1 : int
-        Camera index for the right camera.
-    size : tuple[int, int]
-        Capture resolution as (width, height).
-    fps : int
-        Target frame rate.  Controls ``FrameDurationLimits``.
-    warmup_frames : int
-        Number of frames to discard during AE/AWB warmup.
-    """
 
     def __init__(
         self,
@@ -53,9 +33,7 @@ class StereoCams:
         self._cam_left = self._init_camera(cam0, size, controls)
         self._cam_right = self._init_camera(cam1, size, controls)
 
-    # ------------------------------------------------------------------ public
     def start(self) -> None:
-        """Start both cameras and wait for AE/AWB to settle."""
         self._cam_left.start()
         self._cam_right.start()
         time.sleep(HP.CAMERA_STARTUP_SLEEP_S)
@@ -66,24 +44,14 @@ class StereoCams:
             time.sleep(HP.CAMERA_WARMUP_SLEEP_S)
 
     def stop(self) -> None:
-        """Stop both cameras gracefully."""
         self._cam_left.stop()
         self._cam_right.stop()
 
     def capture_bgr(self) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Capture one frame from each camera.
-
-        Returns
-        -------
-        left_bgr, right_bgr : np.ndarray
-            3-channel uint8 BGR arrays at the configured resolution.
-        """
         left = self._cam_left.capture_array("main")
         right = self._cam_right.capture_array("main")
         return self._to_bgr(left), self._to_bgr(right)
 
-    # ----------------------------------------------------------------- private
     @staticmethod
     def _init_camera(
         index: int,
@@ -100,7 +68,6 @@ class StereoCams:
 
     @staticmethod
     def _to_bgr(frame: np.ndarray) -> np.ndarray:
-        """Drop alpha channel if present (safety guard for unexpected formats)."""
         if frame.ndim == 3 and frame.shape[2] == 4:
             return frame[:, :, :3]
         return frame

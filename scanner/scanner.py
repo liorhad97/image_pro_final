@@ -20,11 +20,12 @@ from utils.image_utils import (
     save_mask_png,
 )
 
+# sweeps the servo 0 to 180 and back, running color detection on both cameras at each step
+# confirmed only when both cameras agree on the same class, bbox is not at the frame edge, and class matches target
+# follow mode tracks the object by adjusting servo angle proportional to how far it is from frame center
 
 @dataclass
 class ScanResult:
-    """Structured result returned when both cameras confirm a detection."""
-
     angle_deg: int
     left_bbox: Optional[tuple]
     left_center: Optional[tuple]
@@ -39,28 +40,6 @@ class ScanResult:
 
 
 class Scanner:
-    """
-    Orchestrates a pan-tilt servo sweep while capturing stereo frames,
-    running blue-object detection on each, and confirming a final target
-    when both cameras agree.
-
-    Acceptance criteria
-    -------------------
-    All four conditions must be met simultaneously:
-
-    1. Both cameras detect a target in the current frame.
-    2. Both cameras report the **same** object class.
-    3. The detected class matches ``config.scan.target`` (or any class when
-       ``target`` is ``None``).
-    4. Both bounding boxes are at least ``edge_margin_px`` from the frame
-       border (avoids partially cropped objects).
-
-    Usage
-    -----
-    cfg = AppConfig()
-    scanner = Scanner(cfg)
-    result = scanner.run()   # blocks until found or interrupted
-    """
 
     def __init__(self, config: AppConfig) -> None:
         self._cfg = config
@@ -93,12 +72,7 @@ class Scanner:
         )
         self._output_dirs = self._prepare_output_dirs(config.scan.outdir)
 
-    # ------------------------------------------------------------------ public
     def run(self) -> Optional[ScanResult]:
-        """
-        Start the servo sweep and return the first confirmed :class:`ScanResult`,
-        or ``None`` if the user exits early.
-        """
         left_gate_px, right_gate_px = self._center_gate_bounds_px()
         print(
             f"[Scanner] Starting — target='{self._cfg.scan.target or 'Any'}' | "
@@ -213,7 +187,6 @@ class Scanner:
 
         return None
 
-    # ----------------------------------------------------------------- private
     def _sweep_angles(self) -> List[int]:
         step = self._cfg.scan.step_deg
         forward = list(range(0, 181, step))
@@ -256,13 +229,6 @@ class Scanner:
         initial_angle: float,
         target_cls: str,
     ) -> bool:
-        """
-        Track *target_cls* by panning the servo so the object stays near the
-        frame centre.
-
-        Returns ``True`` if the user requested quit, otherwise ``False`` when
-        the target was lost and sweep mode should resume.
-        """
         frame_mid_x = self._cfg.camera.width / 2.0
         alignment_threshold_px = hparams.ALIGNMENT_AVERAGE_THRESHOLD_PX
 
@@ -276,7 +242,6 @@ class Scanner:
             average_offset = sum(offsets) / len(offsets)
             if average_offset > alignment_threshold_px:
                 print(f"[INFO] Average offset ({average_offset}px) exceeds threshold ({alignment_threshold_px}px). Aligning object.")
-                # Logic to adjust servo or camera to align the object
 
         kp_deg = hparams.TRACKER_KP_DEG
         max_step_deg = hparams.TRACKER_MAX_STEP_DEG
@@ -468,13 +433,11 @@ class Scanner:
         dist_result: StereoDistanceResult,
         det_left: Optional[DetResult] = None,
     ) -> bool:
-        """Render live preview. Returns ``True`` if user pressed 'c' to quit."""
         left_gate_px, right_gate_px = self._center_gate_bounds_px()
         for x in (int(round(left_gate_px)), int(round(right_gate_px))):
             cv2.line(ann_left, (x, 0), (x, ann_left.shape[0] - 1), (0, 255, 255), 2)
             cv2.line(ann_right, (x, 0), (x, ann_right.shape[0] - 1), (0, 255, 255), 2)
 
-        # Draw distance inside the bounding box on the left frame
         if (
             det_left is not None
             and det_left.is_valid
@@ -511,7 +474,7 @@ class Scanner:
         if hparams.SHOW_PREVIEW:
             cv2.imshow("Stereo Scan (L | R)", combo)
             key = cv2.waitKey(1) & 0xFF
-            return key == ord("c")  # press 'c' to stop
+            return key == ord("c")
         return False
 
     @staticmethod

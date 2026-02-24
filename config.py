@@ -1,8 +1,3 @@
-"""
-Central place for default constants and configuration dataclasses.
-
-Import from here rather than hard-coding values spread across modules.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -10,10 +5,7 @@ from typing import Optional, Tuple
 
 import hparams as HP
 
-
-# ──────────────────────────────────────────────────────────────
-# Camera
-# ──────────────────────────────────────────────────────────────
+# all runtime configuration grouped into dataclasses, default values come from hparams.py
 
 @dataclass
 class CameraConfig:
@@ -24,10 +16,6 @@ class CameraConfig:
     cam1_index: int = HP.CAMERA_CAM1_INDEX
 
 
-# ──────────────────────────────────────────────────────────────
-# Servo
-# ──────────────────────────────────────────────────────────────
-
 @dataclass
 class ServoConfig:
     pwm_channel: int = HP.SERVO_PWM_CHANNEL
@@ -35,10 +23,6 @@ class ServoConfig:
     min_us: int = HP.SERVO_MIN_US
     max_us: int = HP.SERVO_MAX_US
 
-
-# ──────────────────────────────────────────────────────────────
-# Detection / HSV
-# ──────────────────────────────────────────────────────────────
 
 @dataclass
 class DetectionConfig:
@@ -48,10 +32,6 @@ class DetectionConfig:
     downscale_width: int = HP.DOWNSCALE_WIDTH
 
 
-# ──────────────────────────────────────────────────────────────
-# Stereo distance
-# ──────────────────────────────────────────────────────────────
-
 @dataclass
 class StereoConfig:
     baseline_m: float = HP.STEREO_BASELINE_M
@@ -59,10 +39,6 @@ class StereoConfig:
     min_disparity_px: float = HP.STEREO_MIN_DISPARITY_PX
     max_vertical_offset_px: float = HP.STEREO_MAX_VERTICAL_OFFSET_PX
 
-
-# ──────────────────────────────────────────────────────────────
-# Scan behaviour
-# ──────────────────────────────────────────────────────────────
 
 @dataclass
 class ScanConfig:
@@ -73,12 +49,8 @@ class ScanConfig:
     center_right_frac: float = HP.SCAN_CENTER_RIGHT_FRAC
     outdir: str = HP.SCAN_OUTDIR
     view: bool = False
-    target: Optional[str] = None   # "Cube" | "Cylinder" | "Pyramid" | None
+    target: Optional[str] = None
 
-
-# ──────────────────────────────────────────────────────────────
-# Convenience: bundle all configs together
-# ──────────────────────────────────────────────────────────────
 
 @dataclass
 class AppConfig:

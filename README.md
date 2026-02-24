@@ -2,6 +2,30 @@
 
 Command guide for running the stereo vision scanner.
 
+## Target control UI (`target_control_ui.py`)
+
+Desktop interface with two buttons:
+- `▲ Triangle (Pyramid)` runs `python main_drive_target.py --target Pyramid`
+- `■ Square (Cube)` runs `python main_drive_target.py --target Cube`
+
+The UI also shows:
+- live process logs
+- detected angle
+- stereo distance (`cm`) when an object is found
+
+Run:
+
+```bash
+python target_control_ui.py
+```
+
+Note: this UI requires `tkinter` support in your Python runtime.  
+If you use Homebrew Python 3.13 and get `_tkinter` errors, install:
+
+```bash
+brew install python-tk@3.13
+```
+
 ## Main scanner (`main.py`)
 
 Show all available CLI options:
