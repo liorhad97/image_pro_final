@@ -108,7 +108,6 @@ class Scanner:
         self._servo.start(angle=90.0)
         self._cams.start()
 
-        event_idx = 0
         try:
             while True:
               for ang in self._sweep_angles():
@@ -160,22 +159,7 @@ class Scanner:
 
                   ann_left = self._detector.draw(frame_left, det_left, "L: ")
                   ann_right = self._detector.draw(frame_right, det_right, "R: ")
-                  ts = int(time.time() * 1000)
 
-                  if not self._cfg.scan.view:
-                      self._save_per_camera(
-                          event_idx, ts, ang,
-                          ann_left, ann_right,
-                          det_left, det_right,
-                          match_left, match_right,
-                      )
-
-                      if confirmed:
-                          self._save_combined(
-                              event_idx, ts, ang,
-                              ann_left, ann_right,
-                              det_left, dist_result,
-                          )
 
                   if self._cfg.scan.view:
                       quit_requested = self._show_preview(
@@ -189,8 +173,6 @@ class Scanner:
                           print("[Scanner] User pressed 'c' — stopping.")
                           return None
 
-                  if match_left or match_right:
-                      event_idx += 1
 
                   if confirmed:
                       result = self._build_result(
