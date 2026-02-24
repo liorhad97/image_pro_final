@@ -1,0 +1,11 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+
+# Pytest cache
+.pytest_cache/
+
+# Mypy cache
+.mypy_cache/
