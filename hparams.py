@@ -14,12 +14,12 @@ HSV_LO: Tuple[int, int, int] = (105, 120, 50)
 HSV_HI: Tuple[int, int, int] = (123, 255, 255)
 """
 # red upper range
-HSV_LO1: Tuple[int, int, int] = (0, 60, 40)
-HSV_HI1: Tuple[int, int, int] = (12, 255, 255)
+HSV_LO1: Tuple[int, int, int] = (0, 150, 50)
+HSV_HI1: Tuple[int, int, int] = (5, 255, 255)
 
 # red lower range
 # deep red / burgundy
-HSV_LO2: Tuple[int, int, int] = (165, 60, 40)
+HSV_LO2: Tuple[int, int, int] = (170, 150, 50)
 HSV_HI2: Tuple[int, int, int] = (180, 255, 255)
 # ──────────────────────────────────────────────────────────────
 # Detection filtering
