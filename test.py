@@ -3,36 +3,36 @@ from test_angle_motors import move_by_angle_and_distance
 from main import build_arg_parser, build_config
 
 def integrated_system():
-    print("[INFO] התחלת המערכת המשולבת.")
+    print("[INFO] Starting the integrated system.")
 
-    # הגדרת סורק
+    # Set up scanner
     parser = build_arg_parser()
     args = parser.parse_args()
     config = build_config(args)
     scanner = Scanner(config)
 
-    # הפעלת סריקה
-    print("[INFO] הפעלת סריקה לזיהוי אובייקטים.")
+    # Run scan
+    print("[INFO] Running scan to detect objects.")
     result = scanner.run()
 
     if result is not None:
-        #print("[INFO] אובייקט זוהה. תוצאה:", result)
+        #print("[INFO] Object detected. Result:", result)
         print( getattr(result, "angle_deg", 90))
-        print( getattr(result, "distance_cm", 100)) # הדפסת התוצאה המלאה לצורך בדיקה
-        # שימוש בתוצאה כדי להזיז את הרובוט
-        angle = getattr(result, "angle_deg", 90)  # זווית ברירת מחדל 90 מעלות
-        distance_cm = getattr(result, "distance_cm", 100)  # מרחק ברירת מחדל 100 ס"מ
-        
-        print(f"[INFO] מזיז את הרובוט לזווית {angle} ולמרחק {distance_cm} ס\"מ.")
-        if distance_cm is not None and distance_cm > 2.5:  # בדיקה שהמרחק חיובי לפני התנועה
-            move_by_angle_and_distance(angle, distance_cm-2.5)  # תנועה למרחק פחות 2.5 ס"מ כדי לא להתקרב יותר מדי
+        print( getattr(result, "distance_cm", 100)) # Print the full result for testing
+        # Use the result to move the robot
+        angle = getattr(result, "angle_deg", 90)  # default angle 90 degrees
+        distance_cm = getattr(result, "distance_cm", 100)  # default distance 100 cm
+
+        print(f"[INFO] Moving the robot to angle {angle} and distance {distance_cm} cm.")
+        if distance_cm is not None and distance_cm > 2.5:  # check that the distance is positive before moving
+            move_by_angle_and_distance(angle, distance_cm-2.5)  # move to distance minus 2.5 cm to not get too close
     else:
-        print("[INFO] לא זוהה אובייקט. המערכת נעצרת.")
+        print("[INFO] No object detected. System stopping.")
 
 if __name__ == "__main__":
     try:
         integrated_system()
     except KeyboardInterrupt:
-        print("[INFO] עצירת המערכת.")
+        print("[INFO] Stopping the system.")
     finally:
-        print("[INFO] ניקוי משאבים וסיום.")
+        print("[INFO] Cleaning up resources and exiting.")

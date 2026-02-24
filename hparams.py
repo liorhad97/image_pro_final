@@ -18,13 +18,13 @@ HSV_LO1: Tuple[int, int, int] = (0, 60, 40)
 HSV_HI1: Tuple[int, int, int] = (12, 255, 255)
 
 # red lower range
-# אדום עמוק/בורדו
+# deep red / burgundy
 HSV_LO2: Tuple[int, int, int] = (165, 60, 40)
 HSV_HI2: Tuple[int, int, int] = (180, 255, 255)
 # ──────────────────────────────────────────────────────────────
 # Detection filtering
 # ──────────────────────────────────────────────────────────────
-MIN_AREA: int = 50            # minimum contour area [px²] to consider a hit
+MIN_AREA: int = 200           # minimum contour area [px²] to consider a hit
 DOWNSCALE_WIDTH: int = 640    # resize frames wider than this before processing
 
 # ──────────────────────────────────────────────────────────────
