@@ -24,13 +24,13 @@ HSV_HI2: Tuple[int, int, int] = (180, 255, 255)
 # ──────────────────────────────────────────────────────────────
 # Detection filtering
 # ──────────────────────────────────────────────────────────────
-MIN_AREA: int = 70            # minimum contour area [px²] to consider a hit
-DOWNSCALE_WIDTH: int = 1280   # resize frames wider than this before processing
+MIN_AREA: int = 25            # minimum contour area [px²] to consider a hit
+DOWNSCALE_WIDTH: int = 2328   # resize frames wider than this before processing
 
 # ──────────────────────────────────────────────────────────────
 # Morphological cleanup
 # ──────────────────────────────────────────────────────────────
-MORPH_KERNEL_SIZE: Tuple[int, int] = (5, 5)
+MORPH_KERNEL_SIZE: Tuple[int, int] = (3, 3)
 MORPH_CLOSE_ITER: int = 1
 MORPH_OPEN_ITER: int = 1
 
