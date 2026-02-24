@@ -20,7 +20,7 @@ import time
 import cv2
 
 import hparams as HP
-from detection.detector import ColourObjectDetector
+from detection.target_detector import TargetDetector
 from stereo.camera import StereoCams
 from stereo.distance import StereoDistanceEstimator
 from utils.image_utils import hstack_resize
@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    detector = ColourObjectDetector()
+    detector = TargetDetector()
     estimator = StereoDistanceEstimator(
         fx_px=args.fx_px,
         baseline_m=args.baseline_m,

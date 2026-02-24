@@ -9,7 +9,7 @@ import cv2
 
 import hparams
 from config import AppConfig
-from detection.detector import ColourObjectDetector  # concrete colour detector
+from detection.target_detector import TargetDetector
 from detection.models import DetResult
 from servo.controller import ServoController
 from stereo.camera import StereoCams
@@ -65,11 +65,8 @@ class Scanner:
     def __init__(self, config: AppConfig) -> None:
         self._cfg = config
 
-        self._detector = ColourObjectDetector(
-            hsv_lo1=config.detection.hsv_lo,
-            hsv_hi1=config.detection.hsv_hi,
-            hsv_lo2=hparams.HSV_LO2,
-            hsv_hi2=hparams.HSV_HI2,
+        self._detector = TargetDetector(
+            target=config.scan.target,
             min_area=config.detection.min_area,
             downscale_width=config.detection.downscale_width,
         )
@@ -118,8 +115,8 @@ class Scanner:
                   det_left = self._detector.detect(frame_left)
                   det_right = self._detector.detect(frame_right)
 
-                  match_left = self._matches_target(det_left)
-                  match_right = self._matches_target(det_right)
+                  match_left = det_left.found
+                  match_right = det_right.found
                   same_class = self._same_valid_class(det_left, det_right)
                   edge_ok_left = bbox_margin_ok(
                       det_left,
@@ -200,13 +197,6 @@ class Scanner:
         backward = list(range(180, -1, -step))
         return forward + backward[1:-1]
 
-    def _matches_target(self, det: DetResult) -> bool:
-        if not det.found:
-            return False
-        if self._cfg.scan.target is None:
-            return True
-        return det.cls == self._cfg.scan.target
-
     @staticmethod
     def _same_valid_class(det_left: DetResult, det_right: DetResult) -> bool:
         return (
@@ -282,8 +272,8 @@ class Scanner:
                 )
             )
 
-            match_left  = det_left.found  and det_left.cls  == target_cls
-            match_right = det_right.found and det_right.cls == target_cls
+            match_left  = det_left.found
+            match_right = det_right.found
 
             # Log a warning if the average horizontal offset from centre
             # exceeds the alignment threshold.
