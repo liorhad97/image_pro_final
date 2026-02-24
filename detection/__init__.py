@@ -1,4 +1,4 @@
 from .models import DetResult
-from .detector import ColourObjectDetector, RedObjectDetector
+from .detector import ColourObjectDetector
 
-__all__ = ["DetResult", "ColourObjectDetector", "RedObjectDetector"]
+__all__ = ["DetResult", "ColourObjectDetector"]

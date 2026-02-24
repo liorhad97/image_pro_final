@@ -4,22 +4,47 @@ Hyperparameters for all vision / detection components.
 All tunable numbers live here so they can be changed in one place without
 touching business logic in detector.py, config.py, or any other module.
 """
-from typing import Tuple
+from typing import Dict, Tuple
 
 # ──────────────────────────────────────────────────────────────
-# HSV colour thresholds  (hue 0-179, sat 0-255, val 0-255)
+# Colour selection  (hue 0-179, sat 0-255, val 0-255)
+# Change DETECT_COLOUR to switch the target colour globally.
+# For single-hue colours lo2/hi2 mirrors lo1/hi1 (OR is a no-op).
 # ──────────────────────────────────────────────────────────────
-# Previously used for blue detection:
-#   HSV_LO: Tuple[int, int, int] = (105, 120, 50)
-#   HSV_HI: Tuple[int, int, int] = (123, 255, 255)
+DETECT_COLOUR: str = "red"   # "red" | "blue" | "green" | "yellow"
 
-# Red — upper hue range (0–12°)
-HSV_LO1: Tuple[int, int, int] = (0, 60, 40)
-HSV_HI1: Tuple[int, int, int] = (12, 255, 255)
+_COLOUR_PRESETS: Dict[str, Dict[str, Tuple[int, int, int]]] = {
+    "red": {                              # wraps around the 0°/180° boundary
+        "hsv_lo1": (0,   60,  40),
+        "hsv_hi1": (12,  255, 255),
+        "hsv_lo2": (165, 60,  40),
+        "hsv_hi2": (180, 255, 255),
+    },
+    "blue": {
+        "hsv_lo1": (100, 80,  50),
+        "hsv_hi1": (130, 255, 255),
+        "hsv_lo2": (100, 80,  50),        # same — blue is a single hue range
+        "hsv_hi2": (130, 255, 255),
+    },
+    "green": {
+        "hsv_lo1": (40,  60,  40),
+        "hsv_hi1": (85,  255, 255),
+        "hsv_lo2": (40,  60,  40),
+        "hsv_hi2": (85,  255, 255),
+    },
+    "yellow": {
+        "hsv_lo1": (20,  80,  80),
+        "hsv_hi1": (35,  255, 255),
+        "hsv_lo2": (20,  80,  80),
+        "hsv_hi2": (35,  255, 255),
+    },
+}
 
-# Red — lower hue range / deep red / burgundy (165–180°)
-HSV_LO2: Tuple[int, int, int] = (165, 60, 40)
-HSV_HI2: Tuple[int, int, int] = (180, 255, 255)
+_preset = _COLOUR_PRESETS[DETECT_COLOUR]
+HSV_LO1: Tuple[int, int, int] = _preset["hsv_lo1"]
+HSV_HI1: Tuple[int, int, int] = _preset["hsv_hi1"]
+HSV_LO2: Tuple[int, int, int] = _preset["hsv_lo2"]
+HSV_HI2: Tuple[int, int, int] = _preset["hsv_hi2"]
 # ──────────────────────────────────────────────────────────────
 # Detection filtering
 # ──────────────────────────────────────────────────────────────

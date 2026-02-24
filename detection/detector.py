@@ -8,9 +8,7 @@ ColourObjectDetector
     into a single mask.  Classifies the largest blob as Pyramid, Cube, or
     Cylinder using geometric heuristics.
 
-RedObjectDetector
-    Concrete subclass pre-configured for red objects, which span two
-    disjoint HSV hue ranges (0–12° and 165–180°).
+The active colour is selected via ``hparams.DETECT_COLOUR``.
 """
 from __future__ import annotations
 
@@ -252,29 +250,3 @@ class ColourObjectDetector:
         )
 
 
-class RedObjectDetector(ColourObjectDetector):
-    """
-    Detects red objects using two HSV hue ranges.
-
-    Red wraps around the HSV hue circle, so two overlapping ranges are
-    needed:
-    - Range 1 (upper red) : hue 0–12°
-    - Range 2 (deep red)  : hue 165–180°
-
-    Inherits all detection and drawing logic from :class:`ColourObjectDetector`.
-    """
-
-    def __init__(
-        self,
-        hsv_lo1: Tuple[int, int, int] = HP.HSV_LO1,
-        hsv_hi1: Tuple[int, int, int] = HP.HSV_HI1,
-        hsv_lo2: Tuple[int, int, int] = HP.HSV_LO2,
-        hsv_hi2: Tuple[int, int, int] = HP.HSV_HI2,
-        min_area: int = HP.MIN_AREA,
-        downscale_width: int = HP.DOWNSCALE_WIDTH,
-    ) -> None:
-        super().__init__(
-            hsv_lo1=hsv_lo1, hsv_hi1=hsv_hi1,
-            hsv_lo2=hsv_lo2, hsv_hi2=hsv_hi2,
-            min_area=min_area, downscale_width=downscale_width,
-        )
