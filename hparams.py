@@ -115,7 +115,7 @@ GYRO_CORRECTION_GAIN: float = 1.5  # motor duty-cycle adjustment per °/s of rot
 # ──────────────────────────────────────────────────────────────
 # Navigator — movement tuning
 # ──────────────────────────────────────────────────────────────
-NAV_DRIVE_SPEED: float = 90.0        # base motor duty-cycle [%] for straight driving
+NAV_DRIVE_SPEED: float = 100.0        # base motor duty-cycle [%] for straight driving
 NAV_ROTATE_SPEED: float = 45.0       # motor duty-cycle [%] while rotating
 NAV_ROTATE_TOLERANCE_DEG: float = 2.0  # stop rotating when within this many degrees of target
 NAV_STOP_MARGIN_MM: float = 15.0     # stop this many mm before target (overshoot compensation)
