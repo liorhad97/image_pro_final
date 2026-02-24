@@ -121,6 +121,7 @@ TRACKER_MAX_STEP_DEG: float = 4.0      # maximum pan step per update [degrees]
 TRACKER_LOST_LIMIT: int = 20           # consecutive missed frames before giving up
 TRACKER_STEP_SLEEP_S: float = 0.03     # sleep after a pan move [s]
 TRACKER_LOOP_SLEEP_S: float = 0.01     # base loop sleep [s]
+TARGET_LOCK_ITERATIONS: int = 5        # lock-center correction steps before returning angle
 
 # Maximum allowed distance from the center in pixels for object alignment
 ALIGNMENT_MAX_OFFSET_PX: int = 50

@@ -38,6 +38,17 @@ class ScanResult:
     stereo_error: Optional[str] = None
 
 
+@dataclass
+class TargetLockResult:
+    """State captured after the lock-centering phase."""
+
+    angle_deg: float
+    det_left: DetResult
+    det_right: DetResult
+    dist_result: StereoDistanceResult
+    quit_requested: bool = False
+
+
 class Scanner:
     """
     Orchestrates a pan-tilt servo sweep while capturing stereo frames,
@@ -111,100 +122,127 @@ class Scanner:
         event_idx = 0
         try:
             while True:
-              for ang in self._sweep_angles():
-                  self._servo.set_angle(ang)
-                  time.sleep(self._cfg.scan.settle_s)
+                for ang in self._sweep_angles():
+                    self._servo.set_angle(ang)
+                    time.sleep(self._cfg.scan.settle_s)
 
-                  frame_left, frame_right = self._cams.capture_bgr()
-                  det_left = self._detector.detect(frame_left)
-                  det_right = self._detector.detect(frame_right)
+                    frame_left, frame_right = self._cams.capture_bgr()
+                    det_left = self._detector.detect(frame_left)
+                    det_right = self._detector.detect(frame_right)
 
-                  match_left = self._matches_target(det_left)
-                  match_right = self._matches_target(det_right)
-                  same_class = self._same_valid_class(det_left, det_right)
-                  edge_ok_left = bbox_margin_ok(
-                      det_left,
-                      self._cfg.camera.width,
-                      self._cfg.camera.height,
-                      self._cfg.scan.edge_margin_px,
-                  )
-                  edge_ok_right = bbox_margin_ok(
-                      det_right,
-                      self._cfg.camera.width,
-                      self._cfg.camera.height,
-                      self._cfg.scan.edge_margin_px,
-                  )
+                    match_left = self._matches_target(det_left)
+                    match_right = self._matches_target(det_right)
+                    same_class = self._same_valid_class(det_left, det_right)
+                    edge_ok_left = bbox_margin_ok(
+                        det_left,
+                        self._cfg.camera.width,
+                        self._cfg.camera.height,
+                        self._cfg.scan.edge_margin_px,
+                    )
+                    edge_ok_right = bbox_margin_ok(
+                        det_right,
+                        self._cfg.camera.width,
+                        self._cfg.camera.height,
+                        self._cfg.scan.edge_margin_px,
+                    )
 
-                  dist_result: StereoDistanceResult = (
-                      self._distance_estimator.estimate(det_left, det_right)
-                      if same_class
-                      else StereoDistanceResult(
-                          distance_m=None, distance_cm=None,
-                          disparity_px=None, dy_px=None,
-                          error="no_same_class",
-                      )
-                  )
+                    dist_result: StereoDistanceResult = (
+                        self._distance_estimator.estimate(det_left, det_right)
+                        if same_class
+                        else StereoDistanceResult(
+                            distance_m=None,
+                            distance_cm=None,
+                            disparity_px=None,
+                            dy_px=None,
+                            error="no_same_class",
+                        )
+                    )
 
-                  confirmed = (
-                      match_left and match_right
-                      and same_class
-                      and edge_ok_left and edge_ok_right
-                  )
+                    confirmed = (
+                        match_left
+                        and match_right
+                        and same_class
+                        and edge_ok_left
+                        and edge_ok_right
+                    )
 
-                  self._log_frame(
-                      ang, det_left, det_right,
-                      match_left, match_right,
-                      edge_ok_left, edge_ok_right,
-                      same_class, dist_result,
-                  )
+                    self._log_frame(
+                        ang,
+                        det_left,
+                        det_right,
+                        match_left,
+                        match_right,
+                        edge_ok_left,
+                        edge_ok_right,
+                        same_class,
+                        dist_result,
+                    )
 
-                  ann_left = self._detector.draw(frame_left, det_left, "L: ")
-                  ann_right = self._detector.draw(frame_right, det_right, "R: ")
-                  ts = int(time.time() * 1000)
+                    ann_left = self._detector.draw(frame_left, det_left, "L: ")
+                    ann_right = self._detector.draw(frame_right, det_right, "R: ")
+                    ts = int(time.time() * 1000)
 
-                  if not self._cfg.scan.view:
-                      self._save_per_camera(
-                          event_idx, ts, ang,
-                          ann_left, ann_right,
-                          det_left, det_right,
-                          match_left, match_right,
-                      )
+                    if not self._cfg.scan.view:
+                        self._save_per_camera(
+                            event_idx,
+                            ts,
+                            ang,
+                            ann_left,
+                            ann_right,
+                            det_left,
+                            det_right,
+                            match_left,
+                            match_right,
+                        )
 
-                      if confirmed:
-                          self._save_combined(
-                              event_idx, ts, ang,
-                              ann_left, ann_right,
-                              det_left, dist_result,
-                          )
+                        if confirmed:
+                            self._save_combined(
+                                event_idx,
+                                ts,
+                                ang,
+                                ann_left,
+                                ann_right,
+                                det_left,
+                                dist_result,
+                            )
 
-                  if self._cfg.scan.view:
-                      quit_requested = self._show_preview(
-                          ann_left, ann_right,
-                          ang, same_class,
-                          edge_ok_left, edge_ok_right,
-                          dist_result,
-                          det_left,
-                      )
-                      if quit_requested:
-                          print("[Scanner] User pressed 'c' — stopping.")
-                          return None
+                    if self._cfg.scan.view:
+                        quit_requested = self._show_preview(
+                            ann_left,
+                            ann_right,
+                            ang,
+                            same_class,
+                            edge_ok_left,
+                            edge_ok_right,
+                            dist_result,
+                            det_left,
+                        )
+                        if quit_requested:
+                            print("[Scanner] User pressed 'c' — stopping.")
+                            return None
 
-                  if match_left or match_right:
-                      event_idx += 1
+                    if match_left or match_right:
+                        event_idx += 1
 
-                  if confirmed:
-                      result = self._build_result(
-                          ang, det_left, det_right, dist_result
-                      )
-                      if not self._cfg.scan.view:
-                          return result
+                    if confirmed:
+                        locked = self._lock_target(
+                            initial_angle=float(ang),
+                            target_cls=det_left.cls,
+                            initial_det_left=det_left,
+                            initial_det_right=det_right,
+                            initial_dist_result=dist_result,
+                            iterations=hparams.TARGET_LOCK_ITERATIONS,
+                        )
+                        if locked.quit_requested:
+                            print("[Scanner] User pressed 'c' during lock phase.")
+                            return None
 
-                      quit_requested = self._follow_target(
-                          initial_angle=float(ang),
-                          target_cls=result.left_class,
-                      )
-                      if quit_requested:
-                          return result
+                        return self._build_result(
+                            int(round(locked.angle_deg)),
+                            locked.det_left,
+                            locked.det_right,
+                            locked.dist_result,
+                        )
 
         finally:
             self._cleanup()
@@ -219,7 +257,7 @@ class Scanner:
         return forward + backward[1:-1]
 
     def _matches_target(self, det: DetResult) -> bool:
-        if not det.found:
+        if not det.is_valid:
             return False
         if self._cfg.scan.target is None:
             return True
@@ -228,53 +266,52 @@ class Scanner:
     @staticmethod
     def _same_valid_class(det_left: DetResult, det_right: DetResult) -> bool:
         return (
-            det_left.found and det_right.found
-            and det_left.cls != "None" and det_right.cls != "None"
+            det_left.is_valid
+            and det_right.is_valid
+            and det_left.cls != "None"
+            and det_right.cls != "None"
             and det_left.cls == det_right.cls
         )
 
-    def _follow_target(
+    def _lock_target(
         self,
         initial_angle: float,
         target_cls: str,
-    ) -> bool:
+        initial_det_left: DetResult,
+        initial_det_right: DetResult,
+        initial_dist_result: StereoDistanceResult,
+        iterations: int,
+    ) -> TargetLockResult:
         """
-        Track *target_cls* by panning the servo so the object stays near the
-        frame centre.
+        Perform a bounded lock-centering phase around the first confirmed target.
 
-        Returns ``True`` if the user requested quit, otherwise ``False`` when
-        the target was lost and sweep mode should resume.
+        Runs a fixed number of small pan corrections (or fewer if centered early)
+        and returns the final angle + best stereo frame captured during lock.
         """
         frame_mid_x = self._cfg.camera.width / 2.0
-        alignment_threshold_px = hparams.ALIGNMENT_AVERAGE_THRESHOLD_PX
-
-        offsets = []
-        if det_left.center:
-            offsets.append(abs(det_left.center[0] - frame_mid_x))
-        if det_right.center:
-            offsets.append(abs(det_right.center[0] - frame_mid_x))
-
-        if offsets:
-            average_offset = sum(offsets) / len(offsets)
-            if average_offset > alignment_threshold_px:
-                print(f"[INFO] Average offset ({average_offset}px) exceeds threshold ({alignment_threshold_px}px). Aligning object.")
-                # Logic to adjust servo or camera to align the object
+        deadband_px = max(
+            hparams.TRACKER_DEADBAND_MIN_PX,
+            self._cfg.camera.width * hparams.TRACKER_DEADBAND_FRAC,
+        )
 
         kp_deg = hparams.TRACKER_KP_DEG
         max_step_deg = hparams.TRACKER_MAX_STEP_DEG
-        lost_limit = hparams.TRACKER_LOST_LIMIT
+        lock_steps = max(0, int(iterations))
 
         ang = float(initial_angle)
         pan_sign = 1.0
-        lost_count = 0
         prev_error_px: Optional[float] = None
-        prev_delta_deg = 0.0
 
         print(
-            f"[Tracker] Following class='{target_cls}' at pan={int(round(ang))}°."
+            f"[Lock] Centering class='{target_cls}' from pan={int(round(ang))}° "
+            f"for up to {lock_steps} iterations."
         )
 
-        while True:
+        best_det_left = initial_det_left
+        best_det_right = initial_det_right
+        best_dist_result = initial_dist_result
+
+        for idx in range(lock_steps):
             frame_left, frame_right = self._cams.capture_bgr()
             det_left = self._detector.detect(frame_left)
             det_right = self._detector.detect(frame_right)
@@ -297,14 +334,16 @@ class Scanner:
                 self._distance_estimator.estimate(det_left, det_right)
                 if same_class
                 else StereoDistanceResult(
-                    distance_m=None, distance_cm=None,
-                    disparity_px=None, dy_px=None,
+                    distance_m=None,
+                    distance_cm=None,
+                    disparity_px=None,
+                    dy_px=None,
                     error="no_same_class",
                 )
             )
 
-            match_left = det_left.found and det_left.cls == target_cls
-            match_right = det_right.found and det_right.cls == target_cls
+            match_left = det_left.is_valid and det_left.cls == target_cls
+            match_right = det_right.is_valid and det_right.cls == target_cls
 
             centers_x = []
             if match_left and det_left.center is not None:
@@ -312,41 +351,16 @@ class Scanner:
             if match_right and det_right.center is not None:
                 centers_x.append(float(det_right.center[0]))
 
-            if centers_x:
-                lost_count = 0
-                error_px = (sum(centers_x) / len(centers_x)) - frame_mid_x
+            if not centers_x:
+                print("[Lock] Target lost during lock phase; using last confirmed angle.")
+                break
 
-                if (
-                    prev_error_px is not None
-                    and abs(prev_delta_deg) > 1e-3
-                    and abs(prev_error_px) > deadband_px
-                    and abs(error_px) > abs(prev_error_px) + (deadband_px * 0.25)
-                ):
-                    pan_sign *= -1.0
-                    prev_delta_deg = 0.0
-                    print(
-                        f"[Tracker] Reversing pan direction guess (sign={pan_sign:+.0f})."
-                    )
+            if match_left and match_right and same_class and edge_ok_left and edge_ok_right:
+                best_det_left = det_left
+                best_det_right = det_right
+                best_dist_result = dist_result
 
-                delta_deg = 0.0
-                if abs(error_px) > deadband_px:
-                    norm_error = error_px / frame_mid_x
-                    delta_deg = pan_sign * kp_deg * norm_error
-                    delta_deg = max(-max_step_deg, min(max_step_deg, delta_deg))
-
-                    new_ang = max(0.0, min(180.0, ang + delta_deg))
-                    if abs(new_ang - ang) > 1e-3:
-                        ang = new_ang
-                        self._servo.set_angle(ang)
-                        time.sleep(min(hparams.TRACKER_STEP_SLEEP_S, self._cfg.scan.settle_s))
-
-                prev_error_px = error_px
-                prev_delta_deg = delta_deg
-            else:
-                lost_count += 1
-                if lost_count >= lost_limit:
-                    print("[Tracker] Target lost — resuming sweep mode.")
-                    return False
+            error_px = (sum(centers_x) / len(centers_x)) - frame_mid_x
 
             self._log_frame(
                 int(round(ang)),
@@ -375,10 +389,50 @@ class Scanner:
                     det_left,
                 )
                 if quit_requested:
-                    print("[Tracker] User pressed 'c' — stopping.")
-                    return True
+                    print("[Lock] User pressed 'c' — stopping.")
+                    return TargetLockResult(
+                        angle_deg=ang,
+                        det_left=best_det_left,
+                        det_right=best_det_right,
+                        dist_result=best_dist_result,
+                        quit_requested=True,
+                    )
 
+            if abs(error_px) <= deadband_px:
+                print(
+                    f"[Lock] Centered after {idx + 1}/{lock_steps} iterations "
+                    f"(error={error_px:.1f}px, deadband={deadband_px:.1f}px)."
+                )
+                break
+
+            if (
+                prev_error_px is not None
+                and abs(error_px) > abs(prev_error_px) + (deadband_px * 0.25)
+            ):
+                pan_sign *= -1.0
+                print(
+                    f"[Lock] Reversing pan direction guess (sign={pan_sign:+.0f})."
+                )
+
+            norm_error = error_px / frame_mid_x
+            delta_deg = pan_sign * kp_deg * norm_error
+            delta_deg = max(-max_step_deg, min(max_step_deg, delta_deg))
+
+            new_ang = max(0.0, min(180.0, ang + delta_deg))
+            if abs(new_ang - ang) > 1e-3:
+                ang = new_ang
+                self._servo.set_angle(ang)
+                time.sleep(min(hparams.TRACKER_STEP_SLEEP_S, self._cfg.scan.settle_s))
+
+            prev_error_px = error_px
             time.sleep(hparams.TRACKER_LOOP_SLEEP_S)
+
+        return TargetLockResult(
+            angle_deg=ang,
+            det_left=best_det_left,
+            det_right=best_det_right,
+            dist_result=best_dist_result,
+        )
 
     def _save_per_camera(
         self,
