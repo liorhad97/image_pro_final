@@ -9,16 +9,15 @@ from typing import Tuple
 # ──────────────────────────────────────────────────────────────
 # HSV colour thresholds  (hue 0-179, sat 0-255, val 0-255)
 # ──────────────────────────────────────────────────────────────
-""" blue
-HSV_LO: Tuple[int, int, int] = (105, 120, 50)
-HSV_HI: Tuple[int, int, int] = (123, 255, 255)
-"""
-# red upper range
+# Previously used for blue detection:
+#   HSV_LO: Tuple[int, int, int] = (105, 120, 50)
+#   HSV_HI: Tuple[int, int, int] = (123, 255, 255)
+
+# Red — upper hue range (0–12°)
 HSV_LO1: Tuple[int, int, int] = (0, 60, 40)
 HSV_HI1: Tuple[int, int, int] = (12, 255, 255)
 
-# red lower range
-# deep red / burgundy
+# Red — lower hue range / deep red / burgundy (165–180°)
 HSV_LO2: Tuple[int, int, int] = (165, 60, 40)
 HSV_HI2: Tuple[int, int, int] = (180, 255, 255)
 # ──────────────────────────────────────────────────────────────

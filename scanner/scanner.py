@@ -9,7 +9,7 @@ import cv2
 
 import hparams
 from config import AppConfig
-from detection.detector import RedObjectDetector
+from detection.detector import RedObjectDetector  # concrete red-colour detector
 from detection.models import DetResult
 from servo.controller import ServoController
 from stereo.camera import StereoCams
@@ -246,19 +246,16 @@ class Scanner:
         the target was lost and sweep mode should resume.
         """
         frame_mid_x = self._cfg.camera.width / 2.0
+
+        # Minimum pixel deadband: at least TRACKER_DEADBAND_MIN_PX, or a
+        # fraction of the frame width — whichever is larger.
+        deadband_px = max(
+            hparams.TRACKER_DEADBAND_MIN_PX,
+            self._cfg.camera.width * hparams.TRACKER_DEADBAND_FRAC,
+        )
+
+        # Pixel-offset threshold used to log an alignment warning each frame
         alignment_threshold_px = hparams.ALIGNMENT_AVERAGE_THRESHOLD_PX
-
-        offsets = []
-        if det_left.center:
-            offsets.append(abs(det_left.center[0] - frame_mid_x))
-        if det_right.center:
-            offsets.append(abs(det_right.center[0] - frame_mid_x))
-
-        if offsets:
-            average_offset = sum(offsets) / len(offsets)
-            if average_offset > alignment_threshold_px:
-                print(f"[INFO] Average offset ({average_offset}px) exceeds threshold ({alignment_threshold_px}px). Aligning object.")
-                # Logic to adjust servo or camera to align the object
 
         kp_deg = hparams.TRACKER_KP_DEG
         max_step_deg = hparams.TRACKER_MAX_STEP_DEG
@@ -303,8 +300,23 @@ class Scanner:
                 )
             )
 
-            match_left = det_left.found and det_left.cls == target_cls
+            match_left  = det_left.found  and det_left.cls  == target_cls
             match_right = det_right.found and det_right.cls == target_cls
+
+            # Log a warning if the average horizontal offset from centre
+            # exceeds the alignment threshold.
+            offsets: list[float] = []
+            if det_left.center:
+                offsets.append(abs(det_left.center[0] - frame_mid_x))
+            if det_right.center:
+                offsets.append(abs(det_right.center[0] - frame_mid_x))
+            if offsets:
+                avg_offset = sum(offsets) / len(offsets)
+                if avg_offset > alignment_threshold_px:
+                    print(
+                        f"[Tracker] Average offset {avg_offset:.0f}px "
+                        f"exceeds threshold {alignment_threshold_px}px — realigning."
+                    )
 
             centers_x = []
             if match_left and det_left.center is not None:

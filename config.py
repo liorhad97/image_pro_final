@@ -75,6 +75,21 @@ class ScanConfig:
 
 
 # ──────────────────────────────────────────────────────────────
+# Alignment (follow-mode)
+# ──────────────────────────────────────────────────────────────
+
+@dataclass
+class AlignmentConfig:
+    """Pixel-offset thresholds used by the tracker's alignment check."""
+
+    max_offset_px: int = HP.ALIGNMENT_MAX_OFFSET_PX
+    """Maximum single-camera offset from frame centre before realigning [px]."""
+
+    average_threshold_px: int = HP.ALIGNMENT_AVERAGE_THRESHOLD_PX
+    """Maximum average offset across both cameras before realigning [px]."""
+
+
+# ──────────────────────────────────────────────────────────────
 # Convenience: bundle all configs together
 # ──────────────────────────────────────────────────────────────
 
@@ -85,3 +100,4 @@ class AppConfig:
     detection: DetectionConfig = field(default_factory=DetectionConfig)
     stereo: StereoConfig = field(default_factory=StereoConfig)
     scan: ScanConfig = field(default_factory=ScanConfig)
+    alignment: AlignmentConfig = field(default_factory=AlignmentConfig)

@@ -1,3 +1,17 @@
+"""
+Colour-based object detector using HSV thresholding and contour analysis.
+
+Public classes
+--------------
+ColourObjectDetector
+    Generic detector that accepts one or two HSV ranges and combines them
+    into a single mask.  Classifies the largest blob as Pyramid, Cube, or
+    Cylinder using geometric heuristics.
+
+RedObjectDetector
+    Concrete subclass pre-configured for red objects, which span two
+    disjoint HSV hue ranges (0–12° and 165–180°).
+"""
 from __future__ import annotations
 
 from typing import Tuple
@@ -9,15 +23,20 @@ import hparams as HP
 from .models import DetResult
 
 
-class BlueObjectDetector:
+class ColourObjectDetector:
     """
-    Detects the largest blue object in a BGR frame using HSV thresholding,
-    morphological cleanup, and contour analysis.  Classifies the shape as
-    Pyramid, Cube, or Cylinder using simple geometric heuristics.
+    Detects the largest coloured object in a BGR frame using dual-range
+    HSV thresholding, morphological cleanup, and contour analysis.
+    Classifies the detected shape as Pyramid, Cube, or Cylinder using
+    simple geometric heuristics.
+
+    Supports colours that span two hue ranges (e.g. red wraps around
+    the 0°/180° boundary) by OR-ing two inRange masks together.
 
     Usage
     -----
-    detector = BlueObjectDetector()
+    detector = ColourObjectDetector(hsv_lo1=..., hsv_hi1=...,
+                                    hsv_lo2=..., hsv_hi2=...)
     result: DetResult = detector.detect(bgr_frame)
     annotated = detector.draw(bgr_frame, result)
     """
@@ -31,6 +50,7 @@ class BlueObjectDetector:
         min_area: int = HP.MIN_AREA,
         downscale_width: int = HP.DOWNSCALE_WIDTH,
     ) -> None:
+        # Store HSV bounds as uint8 arrays for cv2.inRange
         self._hsv_lo1 = np.array(hsv_lo1, dtype=np.uint8)
         self._hsv_hi1 = np.array(hsv_hi1, dtype=np.uint8)
         self._hsv_lo2 = np.array(hsv_lo2, dtype=np.uint8)
@@ -38,21 +58,32 @@ class BlueObjectDetector:
         self._min_area = min_area
         self._downscale_width = downscale_width
 
-        # Morphological structuring element (shared across calls)
+        # Morphological structuring element — reused across every call
         self._kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, HP.MORPH_KERNEL_SIZE)
 
     # ------------------------------------------------------------------ public
+
     def detect(self, bgr: np.ndarray) -> DetResult:
         """
-        Run blue-segmentation + shape classification on *bgr*.
+        Run colour-segmentation + shape classification on *bgr*.
 
         The image is optionally downscaled for speed; all coordinates and
         masks are mapped back to the original resolution before returning.
+
+        Parameters
+        ----------
+        bgr : np.ndarray
+            Full-resolution BGR frame from the camera.
+
+        Returns
+        -------
+        DetResult
+            Detection result with bounding box, centre, class label, and masks.
         """
         H, W = bgr.shape[:2]
         scale, small = self._maybe_downscale(bgr, W)
 
-        mask_raw = self._build_raw_mask(small)
+        mask_raw   = self._build_raw_mask(small)
         mask_clean = self._apply_morphology(mask_raw)
 
         raw_full, clean_full = self._upscale_masks(mask_raw, mask_clean, scale, W, H)
@@ -96,7 +127,18 @@ class BlueObjectDetector:
         det: DetResult,
         label_prefix: str = "",
     ) -> np.ndarray:
-        """Return a copy of *bgr* annotated with the detection result."""
+        """
+        Return a copy of *bgr* annotated with the detection result.
+
+        Parameters
+        ----------
+        bgr : np.ndarray
+            Original frame to annotate.
+        det : DetResult
+            Detection result to visualise.
+        label_prefix : str
+            Optional prefix for the class label (e.g. ``"L: "``).
+        """
         out = bgr.copy()
 
         if not det.is_valid:
@@ -107,8 +149,8 @@ class BlueObjectDetector:
             )
             return out
 
-        x, y, w, h = det.bbox   # type: ignore[misc]
-        cx, cy = det.center      # type: ignore[misc]
+        x, y, w, h = det.bbox    # type: ignore[misc]
+        cx, cy     = det.center  # type: ignore[misc]
 
         cv2.rectangle(out, (x, y), (x + w, y + h), (0, 255, 0), 3)
         cv2.circle(out, (cx, cy), 7, (0, 0, 255), -1)
@@ -125,9 +167,11 @@ class BlueObjectDetector:
         return out
 
     # ----------------------------------------------------------------- private
+
     def _maybe_downscale(
         self, bgr: np.ndarray, W: int
     ) -> Tuple[float, np.ndarray]:
+        """Resize *bgr* to at most *_downscale_width* px wide, return (scale, img)."""
         if W > self._downscale_width:
             scale = self._downscale_width / float(W)
             H = bgr.shape[0]
@@ -140,14 +184,16 @@ class BlueObjectDetector:
         return 1.0, bgr
 
     def _build_raw_mask(self, bgr: np.ndarray) -> np.ndarray:
-        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        """Create a binary mask by OR-ing both HSV inRange results."""
+        hsv   = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
         mask1 = cv2.inRange(hsv, self._hsv_lo1, self._hsv_hi1)
         mask2 = cv2.inRange(hsv, self._hsv_lo2, self._hsv_hi2)
         return cv2.bitwise_or(mask1, mask2)
 
     def _apply_morphology(self, mask: np.ndarray) -> np.ndarray:
-        closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, self._kernel, iterations=HP.MORPH_CLOSE_ITER)
-        opened = cv2.morphologyEx(closed, cv2.MORPH_OPEN, self._kernel, iterations=HP.MORPH_OPEN_ITER)
+        """Close then open the mask to fill holes and remove noise."""
+        closed = cv2.morphologyEx(mask,   cv2.MORPH_CLOSE, self._kernel, iterations=HP.MORPH_CLOSE_ITER)
+        opened = cv2.morphologyEx(closed, cv2.MORPH_OPEN,  self._kernel, iterations=HP.MORPH_OPEN_ITER)
         return opened
 
     @staticmethod
@@ -158,8 +204,9 @@ class BlueObjectDetector:
         W: int,
         H: int,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """Restore downscaled masks to the original frame resolution."""
         if scale != 1.0:
-            raw_full = cv2.resize(raw, (W, H), interpolation=cv2.INTER_NEAREST)
+            raw_full   = cv2.resize(raw,   (W, H), interpolation=cv2.INTER_NEAREST)
             clean_full = cv2.resize(clean, (W, H), interpolation=cv2.INTER_NEAREST)
             return raw_full, clean_full
         return raw, clean
@@ -173,18 +220,19 @@ class BlueObjectDetector:
         h: int,
     ) -> str:
         """
-        Geometric heuristics to label the contour as Pyramid, Cylinder, or Cube.
+        Label the contour as ``"Pyramid"``, ``"Cylinder"``, or ``"Cube"``
+        using geometric heuristics.
 
         Notes
         -----
-        - *extent*      = area / bounding-box area  (how tightly the blob fills its box)
+        - *extent*      = area / bounding-box area  (1.0 = perfectly fills box)
         - *circularity* = 4π·area / perimeter²       (1.0 = perfect circle)
-        - *n*           = vertex count after DP approximation
+        - *n*           = vertex count after Douglas-Peucker approximation
         """
-        extent = area / float(w * h + 1e-9)
-        circularity = 4.0 * np.pi * area / (perimeter * perimeter + 1e-12)
-        approx = cv2.approxPolyDP(cnt, HP.CLASSIFY_DP_EPSILON * perimeter, True)
-        n = len(approx)
+        extent       = area / float(w * h + 1e-9)
+        circularity  = 4.0 * np.pi * area / (perimeter * perimeter + 1e-12)
+        approx       = cv2.approxPolyDP(cnt, HP.CLASSIFY_DP_EPSILON * perimeter, True)
+        n            = len(approx)
 
         if extent < HP.CLASSIFY_PYRAMID_MAX_EXTENT and n <= HP.CLASSIFY_PYRAMID_MAX_VERTICES:
             return "Pyramid"
@@ -196,6 +244,7 @@ class BlueObjectDetector:
     def _scale_coords(
         x: int, y: int, w: int, h: int, cx: int, cy: int, factor: float
     ) -> Tuple[int, int, int, int, int, int]:
+        """Scale all bounding-box and centre coordinates by *factor*."""
         return (
             int(x * factor), int(y * factor),
             int(w * factor), int(h * factor),
@@ -203,11 +252,18 @@ class BlueObjectDetector:
         )
 
 
-class RedObjectDetector(BlueObjectDetector):
+class RedObjectDetector(ColourObjectDetector):
     """
-    Detects the largest red object in a BGR frame using HSV thresholding,
-    morphological cleanup, and contour analysis. Inherits from BlueObjectDetector.
+    Detects red objects using two HSV hue ranges.
+
+    Red wraps around the HSV hue circle, so two overlapping ranges are
+    needed:
+    - Range 1 (upper red) : hue 0–12°
+    - Range 2 (deep red)  : hue 165–180°
+
+    Inherits all detection and drawing logic from :class:`ColourObjectDetector`.
     """
+
     def __init__(
         self,
         hsv_lo1: Tuple[int, int, int] = HP.HSV_LO1,
@@ -219,13 +275,6 @@ class RedObjectDetector(BlueObjectDetector):
     ) -> None:
         super().__init__(
             hsv_lo1=hsv_lo1, hsv_hi1=hsv_hi1,
-            min_area=min_area, downscale_width=downscale_width
+            hsv_lo2=hsv_lo2, hsv_hi2=hsv_hi2,
+            min_area=min_area, downscale_width=downscale_width,
         )
-        self._hsv_lo2 = np.array(hsv_lo2, dtype=np.uint8)
-        self._hsv_hi2 = np.array(hsv_hi2, dtype=np.uint8)
-
-    def _build_raw_mask(self, bgr: np.ndarray) -> np.ndarray:
-        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-        mask1 = cv2.inRange(hsv, self._hsv_lo1, self._hsv_hi1)
-        mask2 = cv2.inRange(hsv, self._hsv_lo2, self._hsv_hi2)
-        return cv2.bitwise_or(mask1, mask2)

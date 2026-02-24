@@ -2,7 +2,7 @@
 """
 Live stereo distance measurement.
 
-Captures frames from both cameras, detects the blue object in each,
+Captures frames from both cameras, detects the red object in each,
 and shows a side-by-side window with the measured distance.
 
 Usage
@@ -20,7 +20,7 @@ import time
 import cv2
 
 import hparams as HP
-from detection.detector import BlueObjectDetector
+from detection.detector import ColourObjectDetector
 from stereo.camera import StereoCams
 from stereo.distance import StereoDistanceEstimator
 from utils.image_utils import hstack_resize
@@ -28,7 +28,7 @@ from utils.image_utils import hstack_resize
 
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
-        description="Live stereo distance measurement for a blue object.",
+        description="Live stereo distance measurement for a red object.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     ap.add_argument("--baseline-m", type=float, default=HP.STEREO_BASELINE_M,
@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    detector = BlueObjectDetector()
+    detector = ColourObjectDetector()
     estimator = StereoDistanceEstimator(
         fx_px=args.fx_px,
         baseline_m=args.baseline_m,
