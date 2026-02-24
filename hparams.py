@@ -24,14 +24,14 @@ HSV_HI2: Tuple[int, int, int] = (180, 255, 255)
 # ──────────────────────────────────────────────────────────────
 # Detection filtering
 # ──────────────────────────────────────────────────────────────
-MIN_AREA: int = 200           # minimum contour area [px²] to consider a hit
-DOWNSCALE_WIDTH: int = 640    # resize frames wider than this before processing
+MIN_AREA: int = 70            # minimum contour area [px²] to consider a hit
+DOWNSCALE_WIDTH: int = 1280   # resize frames wider than this before processing
 
 # ──────────────────────────────────────────────────────────────
 # Morphological cleanup
 # ──────────────────────────────────────────────────────────────
-MORPH_KERNEL_SIZE: Tuple[int, int] = (7, 7)
-MORPH_CLOSE_ITER: int = 2
+MORPH_KERNEL_SIZE: Tuple[int, int] = (5, 5)
+MORPH_CLOSE_ITER: int = 1
 MORPH_OPEN_ITER: int = 1
 
 # ──────────────────────────────────────────────────────────────
@@ -100,8 +100,8 @@ SERVO_PERIOD_US: int = 20_000           # 1 / 50 Hz = 20 ms = 20 000 µs
 # ──────────────────────────────────────────────────────────────
 STEREO_BASELINE_M: float = 0.075        # camera centre-to-centre separation [m]
 STEREO_FX_PX: float = 1893.0            # horizontal focal length [px] — calibrate!
-STEREO_MIN_DISPARITY_PX: float = 2.0    # below this disparity, Z is unreliable
-STEREO_MAX_VERTICAL_OFFSET_PX: float = 60.0  # max |yL-yR| for a valid estimate
+STEREO_MIN_DISPARITY_PX: float = 1.0    # below this disparity, Z is unreliable
+STEREO_MAX_VERTICAL_OFFSET_PX: float = 80.0  # max |yL-yR| for a valid estimate
 
 # ──────────────────────────────────────────────────────────────
 # Scan behaviour
