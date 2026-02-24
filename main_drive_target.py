@@ -25,7 +25,11 @@ def integrated_system():
 
         print(f"[INFO] Moving the robot to angle {angle} and distance {distance_cm} cm.")
         if distance_cm is not None and distance_cm > 2.5:  # check that the distance is positive before moving
-            move_by_angle_and_distance(angle, distance_cm-2.5)  # move to distance minus 2.5 cm to not get too close
+            move_by_angle_and_distance(
+                angle,
+                distance_cm - 2.5,
+                target_cls=getattr(result, "left_class", None),
+            )  # move to distance minus 2.5 cm to not get too close
     else:
         print("[INFO] No object detected. System stopping.")
 
