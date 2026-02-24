@@ -9,7 +9,7 @@ import cv2
 
 import hparams
 from config import AppConfig
-from detection.detector import RedObjectDetector  # concrete red-colour detector
+from detection.detector import ColourObjectDetector  # concrete colour detector
 from detection.models import DetResult
 from servo.controller import ServoController
 from stereo.camera import StereoCams
@@ -65,7 +65,7 @@ class Scanner:
     def __init__(self, config: AppConfig) -> None:
         self._cfg = config
 
-        self._detector = RedObjectDetector(
+        self._detector = ColourObjectDetector(
             hsv_lo1=config.detection.hsv_lo,
             hsv_hi1=config.detection.hsv_hi,
             hsv_lo2=hparams.HSV_LO2,
