@@ -230,18 +230,11 @@ class Scanner:
         target_cls: str,
     ) -> bool:
         frame_mid_x = self._cfg.camera.width / 2.0
-        alignment_threshold_px = hparams.ALIGNMENT_AVERAGE_THRESHOLD_PX
-
-        offsets = []
-        if det_left.center:
-            offsets.append(abs(det_left.center[0] - frame_mid_x))
-        if det_right.center:
-            offsets.append(abs(det_right.center[0] - frame_mid_x))
-
-        if offsets:
-            average_offset = sum(offsets) / len(offsets)
-            if average_offset > alignment_threshold_px:
-                print(f"[INFO] Average offset ({average_offset}px) exceeds threshold ({alignment_threshold_px}px). Aligning object.")
+        alignment_threshold_px = float(hparams.ALIGNMENT_AVERAGE_THRESHOLD_PX)
+        deadband_px = max(
+            float(hparams.TRACKER_DEADBAND_MIN_PX),
+            float(self._cfg.camera.width) * float(hparams.TRACKER_DEADBAND_FRAC),
+        )
 
         kp_deg = hparams.TRACKER_KP_DEG
         max_step_deg = hparams.TRACKER_MAX_STEP_DEG
@@ -252,6 +245,7 @@ class Scanner:
         lost_count = 0
         prev_error_px: Optional[float] = None
         prev_delta_deg = 0.0
+        alignment_checked = False
 
         print(
             f"[Tracker] Following class='{target_cls}' at pan={int(round(ang))}°."
@@ -296,6 +290,18 @@ class Scanner:
                 centers_x.append(float(det_right.center[0]))
 
             if centers_x:
+                if not alignment_checked:
+                    average_offset = (
+                        sum(abs(cx - frame_mid_x) for cx in centers_x) / len(centers_x)
+                    )
+                    if average_offset > alignment_threshold_px:
+                        print(
+                            "[INFO] Average offset "
+                            f"({average_offset:.1f}px) exceeds threshold "
+                            f"({alignment_threshold_px:.1f}px). Aligning object."
+                        )
+                    alignment_checked = True
+
                 lost_count = 0
                 error_px = (sum(centers_x) / len(centers_x)) - frame_mid_x
 
