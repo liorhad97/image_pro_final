@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import cv2
 
@@ -41,8 +41,9 @@ class ScanResult:
 
 class Scanner:
 
-    def __init__(self, config: AppConfig) -> None:
+    def __init__(self, config: AppConfig, frame_callback: Optional[Callable] = None) -> None:
         self._cfg = config
+        self._frame_callback = frame_callback
 
         self._detector = RedObjectDetector(
             hsv_lo1=config.detection.hsv_lo,
@@ -137,6 +138,10 @@ class Scanner:
                   ann_left = self._detector.draw(frame_left, det_left, "L: ")
                   ann_right = self._detector.draw(frame_right, det_right, "R: ")
                   ts = int(time.time() * 1000)
+
+                  if self._frame_callback is not None:
+                      combo = hstack_resize(ann_left, ann_right, max_width=hparams.PREVIEW_MAX_WIDTH)
+                      self._frame_callback(combo)
 
                   if not self._cfg.scan.view:
                       self._save_per_camera(
@@ -345,6 +350,10 @@ class Scanner:
 
             ann_left = self._detector.draw(frame_left, det_left, "L: ")
             ann_right = self._detector.draw(frame_right, det_right, "R: ")
+
+            if self._frame_callback is not None:
+                combo = hstack_resize(ann_left, ann_right, max_width=hparams.PREVIEW_MAX_WIDTH)
+                self._frame_callback(combo)
 
             if self._cfg.scan.view:
                 quit_requested = self._show_preview(
