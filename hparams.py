@@ -1,8 +1,5 @@
 from typing import Tuple
 
-# HSV is used instead of BGR for color detection because hue is stable under changing light conditions
-# red wraps around hue 0 in the HSV wheel so two separate ranges are needed to cover the full red spectrum
-# stereo distance formula is Z = (fx * baseline) / abs(xLeft - xRight)
 
 HSV_LO1: Tuple[int, int, int] = (0, 150, 50)
 HSV_HI1: Tuple[int, int, int] = (5, 255, 255)
@@ -59,12 +56,12 @@ SERVO_PWM_FREQUENCY_HZ: int = 50
 SERVO_PERIOD_US: int = 20_000
 
 STEREO_BASELINE_M: float = 0.075
-STEREO_FX_PX: float = 1920.0
+STEREO_FX_PX: float = 1925.0
 STEREO_MIN_DISPARITY_PX: float = 1.0
 STEREO_MAX_VERTICAL_OFFSET_PX: float = 80.0
 
-SCAN_STEP_DEG: int = 1
-SCAN_SETTLE_S: float = 0.1
+SCAN_STEP_DEG: int = 2
+SCAN_SETTLE_S: float = 0.05
 SCAN_EDGE_MARGIN_PX: int = 10
 SCAN_OUTDIR: str = "outputs"
 SCAN_CENTER_LEFT_FRAC: float = 0.35
